@@ -213,6 +213,7 @@ PUBLIC int do_nice(message *m_ptr)
 /*	rmp->max_priority = rmp->priority = new_q;  */
 	/* allot new tickets for the process */
 	allot_ticket(rmp, m_ptr->SCHEDULING_MAXPRIO);
+	rmp->priority = USER_Q;   /* put it in the user queue */
 	rv = play_lottery();
 	return rv;
 	if ((rv = schedule_process(rmp)) != OK) {
@@ -314,6 +315,7 @@ int play_lottery()
 			if (old_priority != rmp->priority) {            /* if priority has changed */
 				printf("playing lottery\n");
 				schedule_process(rmp);
+				break;
 			}
 		}
 	}
