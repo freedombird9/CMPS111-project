@@ -48,10 +48,10 @@ PUBLIC int do_noquantum(message *m_ptr)
 	printf("no quantum priority: %d\n", rmp->priority);
 	if (IN_USER_Q(rmp)) {
 		rmp->priority = USER_Q;
-		if (rmp->ticket_num > 1)
-			allot_ticket(rmp, -1); 
-		rv = play_lottery();
+	/*	if (rmp->ticket_num > 1)
+			allot_ticket(rmp, -1); */
 		printf("no quantum for our user process\n");
+		rv = play_lottery();
 		return rv;
 	}
 	else if (rmp->priority < MIN_USER_Q) {
@@ -299,21 +299,17 @@ int play_lottery()
 	}
 	lucky_num = nTickets? rand() % nTickets : 0;		/* set the number we're going to choose next */
 	printf("gathered %d tickets in total\n", nTickets);
-	printf("priority:%d\n", rmp->priority);
 	printf("lucky_num = %d\n", lucky_num);
 
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){
 		if ((rmp->flags & IN_USE) && IN_USER_Q(rmp)) {  /* if it's in our user queue */
-			old_priority = rmp->priority;
+		/*	old_priority = rmp->priority;  */
 			if (lucky_num > 0) 
 				lucky_num -= rmp->ticket_num;		 /* looking for the lucky process by counting */
 			if (lucky_num <= 0) {	
 				rmp->priority = MAX_USER_Q;
 				result = OK;
 				printf("lucky process chosen\n");
-			}
-			if (old_priority != rmp->priority) {            /* if priority has changed */
-				printf("playing lottery\n");
 				schedule_process(rmp);
 				break;
 			}
