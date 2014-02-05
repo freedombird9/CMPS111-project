@@ -142,7 +142,7 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 		rmp->priority = schedproc[parent_nr_n].priority;
 		rmp->time_slice = schedproc[parent_nr_n].time_slice;
 		allot_ticket(rmp, 5);		/* initial number of tickets */    	
-		printf("start scheduling user process at priority %d\n", rmp->priority);
+		printf("start scheduling user process at priority %d, with ticket no. %d\n", rmp->priority, rmp->ticket_num);
 		break;
 		
 	default: 
@@ -199,7 +199,6 @@ PUBLIC int do_nice(message *m_ptr)
 	}
 
 	rmp = &schedproc[proc_nr_n];
-	rmp->priority = USER_Q;
 /*	new_q = (unsigned) m_ptr->SCHEDULING_MAXPRIO;
 	if (new_q >= NR_SCHED_QUEUES) {
 		return EINVAL;
@@ -212,8 +211,10 @@ PUBLIC int do_nice(message *m_ptr)
 	/* Update the proc entry and reschedule the process */
 /*	rmp->max_priority = rmp->priority = new_q;  */
 	/* allot new tickets for the process */
+	printf("niced %d tickets\n", m_ptr->SCHEDULING_MAXPRIO);
 	allot_ticket(rmp, m_ptr->SCHEDULING_MAXPRIO);
-	rmp->priority = USER_Q;   /* put it in the user queue */
+	rmp->priority = MAX_USER_Q;   /* put it in the running queue (max pri.) */
+	schedule_process(rmp);
 	rv = play_lottery();
 	return rv;
 	if ((rv = schedule_process(rmp)) != OK) {
