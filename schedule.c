@@ -18,7 +18,8 @@ PRIVATE timer_t sched_timer;
 PRIVATE unsigned balance_timeout;
 
 #define BALANCE_TIMEOUT	5 /* how often to balance queues in seconds */
-#define IN_USER_Q(x) ( (x)->priority >= MAX_USER_Q && (x)->priority <= USER_Q )
+#define IN_MAX_USER_Q(x) ( (x)->priority == MAX_USER_Q )
+#define IN_USER_Q(x)	 ( (x)->priority <= USER_Q && (x)->priority > MAX_USER_Q )
 #define OUR_RUNNING(x)   ( (x)->priority == MAX_USER_Q )
 
 FORWARD _PROTOTYPE( int schedule_process, (struct schedproc * rmp)	);
@@ -45,19 +46,19 @@ PUBLIC int do_noquantum(message *m_ptr)
 	}
 
 	rmp = &schedproc[proc_nr_n];
-	printf("no quantum priority: %d\n", rmp->priority);
-	if (IN_USER_Q(rmp)) {
+	printf("no quantum, at priority: %d\n", rmp->priority);
+	if (IN_MAX_USER_Q(rmp)) {
 		rmp->priority = USER_Q;
 	/*	if (rmp->ticket_num > 1)
 			allot_ticket(rmp, -1); */
-		printf("no quantum for our user process\n");
+		printf("no quantum for our user process, put into pri: %d\n", rmp->priority);
 		rv = play_lottery();
 		return rv;
 	}
 	else if (rmp->priority < MIN_USER_Q) {
 		rmp->priority += 1; /* lower priority */
 	}
-	printf("no quantum left\n");
+	printf("no quantum left for sys tasks\n");
 	if ((rv = schedule_process(rmp)) != OK) {
 		return rv;
 	}
@@ -139,7 +140,7 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 				&parent_nr_n)) != OK)
 			return rv;
 
-		rmp->priority = schedproc[parent_nr_n].priority;
+		rmp->priority = USER_Q;			/* schedproc[parent_nr_n].priority; */
 		rmp->time_slice = schedproc[parent_nr_n].time_slice;
 		allot_ticket(rmp, 5);		/* initial number of tickets */    	
 		printf("start scheduling user process at priority %d, with ticket no. %d\n", rmp->priority, rmp->ticket_num);
@@ -211,11 +212,12 @@ PUBLIC int do_nice(message *m_ptr)
 	/* Update the proc entry and reschedule the process */
 /*	rmp->max_priority = rmp->priority = new_q;  */
 	/* allot new tickets for the process */
-	printf("niced %d tickets\n", m_ptr->SCHEDULING_MAXPRIO);
+
 	allot_ticket(rmp, m_ptr->SCHEDULING_MAXPRIO);
+	printf("niced %d tickets\n", m_ptr->SCHEDULING_MAXPRIO);
 	rmp->priority = MAX_USER_Q;   /* put it in the running queue (max pri.) */
+	printf("and put into queue %d\n", rmp->priority);
 	schedule_process(rmp);
-	rv = play_lottery();
 	return rv;
 	if ((rv = schedule_process(rmp)) != OK) {
 		/* Something went wrong when rescheduling the process, roll
@@ -224,9 +226,7 @@ PUBLIC int do_nice(message *m_ptr)
 		rmp->max_priority = old_max_q;  */
 	}
 	
-	return rv;
-
-	
+	return rv;	
 }
 
 /*===========================================================================*
@@ -235,6 +235,7 @@ PUBLIC int do_nice(message *m_ptr)
 PRIVATE int schedule_process(struct schedproc * rmp)
 {
 	int rv;
+	printf("start schedule_process with prio. %d and quantum %d\n", rmp->priority, rmp->time_slice);
 
 	if ((rv = sys_schedule(rmp->endpoint, rmp->priority,
 			rmp->time_slice)) != OK) {
@@ -266,23 +267,28 @@ PUBLIC void init_scheduling(void)
  * quantum. This function will find all proccesses that have been bumped down,
  * and pulls them back up. This default policy will soon be changed.
  */
-PRIVATE void balance_queues(struct timer *tp)
+ PRIVATE void balance_queues(struct timer *tp)
 {
-	struct schedproc *rmp;
+/*	struct schedproc *rmp;
 	int proc_nr;
 	int rv;
 
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
-		if (rmp->flags & IN_USE && (!IN_USER_Q(rmp))) {     /* do it only for processes not in our queues */
+		if (rmp->flags & IN_USE && (!IN_USER_Q(rmp))) {     
 			if (rmp->priority > rmp->max_priority) {
-				rmp->priority -= 1; /* increase priority */
+				rmp->priority -= 1; 
 				schedule_process(rmp);
 			}
 		}
 	}
 
-	set_timer(&sched_timer, balance_timeout, balance_queues, 0);
+	set_timer(&sched_timer, balance_timeout, balance_queues, 0);  */
 }
+
+
+/*===========================================================================*
+ *				play lottery				     *
+ *===========================================================================*/
 
 int play_lottery()
 {
@@ -298,26 +304,39 @@ int play_lottery()
 		if ((rmp->flags & IN_USE) && IN_USER_Q(rmp))
 			nTickets += rmp->ticket_num;
 	}
-	lucky_num = nTickets? rand() % nTickets : 0;		/* set the number we're going to choose next */
+
 	printf("gathered %d tickets in total\n", nTickets);
+	if (nTickets == 0) {
+		printf ("no process is ready to run\n");
+		return 1;
+	}	
+	lucky_num = nTickets? rand() % nTickets : 0;		/* set the number we're going to choose next */
+	
 	printf("lucky_num = %d\n", lucky_num);
 
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){
 		if ((rmp->flags & IN_USE) && IN_USER_Q(rmp)) {  /* if it's in our user queue */
-		/*	old_priority = rmp->priority;  */
+			old_priority = rmp->priority;  
 			if (lucky_num > 0) 
 				lucky_num -= rmp->ticket_num;		 /* looking for the lucky process by counting */
 			if (lucky_num <= 0) {	
 				rmp->priority = MAX_USER_Q;
-				result = OK;
-				printf("lucky process chosen\n");
-				schedule_process(rmp);
-				break;
+                                if (rmp->priority != old_priority) {
+					result = OK;
+					printf("lucky process chosen, put in queue %d\n", rmp->priority);
+					schedule_process(rmp);
+					break;
+				}
+				else printf("process is already running\n");
 			}
 		}
 	}
 	return nTickets ? result : OK;
 }
+
+/*===========================================================================*
+ *				allot tickets				     *
+ *===========================================================================*/
 
 void allot_ticket(struct schedproc *rmp, int tickets)
 {
