@@ -24,6 +24,8 @@ main (int argc, char *argv[])
   int	iteration = 1;
   int	loopCount;
   int	maxloops;
+  int   no_p;
+  int   n_print=0, o_print=0;
 
   if (argc < 3 || argc > 4) {
     printf ("Usage: %s <id> <loop count> [max loops]\n", argv[0]);
@@ -59,12 +61,16 @@ main (int argc, char *argv[])
       if (iteration == maxloops) {
 	break;
       }
-	sleep(1);
-      printf ("%s:%06d\n", idStr, iteration);
-      
+      n_print=n_print+1;
+      if((n_print-o_print)>100){
+          o_print=n_print;
+        printf ("%s:%06d\n", idStr, iteration);
+    }
       fflush (stdout);
       iteration += 1;
       i = 0;
+      for(no_p=0;no_p<10000;no_p++)
+          ;
     }
   }
   /* Print a value for v that's unpredictable so the compiler can't
