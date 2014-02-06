@@ -35,7 +35,7 @@ PUBLIC int do_noquantum(message *m_ptr)
 {
 	register struct schedproc *rmp;
 	int rv, proc_nr_n;
-	printf("start do no quantum\n");
+	/*printf("start do no quantum\n");*/
 	if (sched_isokendpt(m_ptr->m_source, &proc_nr_n) != OK) {
 		printf("SCHED: WARNING: got an invalid endpoint in OOQ msg %u.\n",
 		m_ptr->m_source);
@@ -43,7 +43,7 @@ PUBLIC int do_noquantum(message *m_ptr)
 	}
 
 	rmp = &schedproc[proc_nr_n];
-	printf("no quantum priority: %d\n", rmp->priority);
+	printf("n_q p: %d\n", rmp->priority);
 
     if(rmp->user_p==1){
         rmp->priority = USER_Q;
@@ -53,7 +53,7 @@ PUBLIC int do_noquantum(message *m_ptr)
 	if (rmp->user_p!=1) {
         if(rmp->priority<=6)
 		    rmp->priority += 1; /* lower priority */
-        printf("k_p out of qua new_q=%d\n", rmp->priority);
+        printf("k_p new_q=%d\n", rmp->priority);
 	}
 
 
@@ -71,6 +71,7 @@ PUBLIC int do_stop_scheduling(message *m_ptr)
 	register struct schedproc *rmp;
 	int rv, proc_nr_n;
 
+    printf("st_p quantum=%d",rmp->time_slice);
 	/* check who can send you requests */
 	if (!accept_message(m_ptr))
 		return EPERM;
@@ -83,7 +84,7 @@ PUBLIC int do_stop_scheduling(message *m_ptr)
     rmp = &schedproc[proc_nr_n];
 	rmp->flags = 0; /*&= ~IN_USE;*/
     printf("k_p stop sche\n");
-	printf("do stop scheduling\n");
+	/*printf("do stop scheduling\n");*/
     if(rmp->user_p==1)
         gloTicket = gloTicket -5;
     play_lottery();
@@ -206,10 +207,16 @@ PUBLIC int do_nice(message *m_ptr)
 	if (new_q >= NR_SCHED_QUEUES) {
 		return EINVAL;
 	}
+    allot_ticket(rmp, m_ptr->SCHEDULING_MAXPRIO);
+	printf("niced %d tickets\n", m_ptr->SCHEDULING_MAXPRIO);
+	rmp->priority = MAX_USER_Q;   /* put it in the running queue (max pri.) */
+	printf("and put into queue %d\n", rmp->priority);
+	schedule_process(rmp);
+	return rv;
 
-	/* Store old values, in case we need to roll back the changes */
+	/* Store old values, in case we need to roll back the changes
 	old_q     = rmp->priority;
-	old_max_q = rmp->max_priority;
+	old_max_q = rmp->max_priority;*/
 
 	/* Update the proc entry and reschedule the process */
 	rmp->max_priority = rmp->priority = new_q;
@@ -267,14 +274,14 @@ PRIVATE void balance_queues(struct timer *tp)
 	int proc_nr;
     int rv;
 
-    printf("balance queue\n");
+    /*printf("balance queue\n");*/
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++) {
         if (rmp->flags & IN_USE) {
             if((rmp->priority!=0)&&(rmp->user_p==1));
-		    printf("%d_%d ", rmp->priority,rmp->user_p);
+		    /*printf("%d_%d ", rmp->priority,rmp->user_p);*/
         }
 	}
-	printf("gloTicket = %d\n",gloTicket);
+	/*printf("gloTicket = %d\n",gloTicket);*/
 
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
 		if (rmp->flags & IN_USE) {
@@ -304,13 +311,12 @@ int play_lottery(){
     for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){      /* scan the Q, get the total number of tickets */
 		if ((rmp->flags & IN_USE) && PROCESS_IN_USER_Q(rmp)&&(rmp->user_p==1)){
 			nTickets += rmp->ticket_num;
-            printf("priority=%d ticket_num=%d\n", rmp->priority,rmp->ticket_num);
+            /*printf("p=%d num=%d ts=%d\n", rmp->priority,rmp->ticket_num,rmp->time_slice);*/
         }
 	}
 
 	lucky_num = nTickets? rand() % nTickets : 0;		/* set the number we're going to choose next */
 	printf("gathered %d tickets in total\n", nTickets);
-	printf("priority:%d\n", rmp->priority);
 	printf("lucky_num = %d\n", lucky_num);
 
     for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){
@@ -328,5 +334,18 @@ int play_lottery(){
     }
     printf("end play_lottery\n");
     return 0;
+}
+
+/*===========================================================================*
+ *				allot_ticket				     *
+ *===========================================================================*/
+void allot_ticket(struct schedproc *rmp, int tickets)
+{
+	if ( (rmp->ticket_num + tickets) <= 100 ) {
+		rmp->ticket_num += tickets;
+		printf("alloted %d tickets\n", tickets);
+	}
+
+	else rmp->ticket_num = 100;
 }
 
