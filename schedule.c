@@ -256,15 +256,11 @@ PUBLIC void init_scheduling(void)
  * quantum. This function will find all proccesses that have been bumped down,
  * and pulls them back up. This default policy will soon be changed.
  */
-<<<<<<< HEAD
-=======
-
->>>>>>> 6ec9b4982068622806b6e840efe9f8d7aeeab2d7
 PRIVATE void balance_queues(struct timer *tp)
 {
 	struct schedproc *rmp;
 	int proc_nr;
-        int rv;
+    int rv;
 
     printf("balance queue\n");
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++) {
@@ -276,19 +272,11 @@ PRIVATE void balance_queues(struct timer *tp)
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
 		if (rmp->flags & IN_USE) {
 			if (rmp->priority > rmp->max_priority) {
-<<<<<<< HEAD
                 if(rmp->user_p!=1){
 			    	rmp->priority -= 1;
 				    schedule_process(rmp);
                 }
             }
-=======
-                		if(rmp->user_p!=1){
-			    		rmp->priority -= 1;
-				    	schedule_process(rmp);
-                		 }
-        		}
->>>>>>> 6ec9b4982068622806b6e840efe9f8d7aeeab2d7
 		}
 	}
 
