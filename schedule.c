@@ -22,6 +22,7 @@ PRIVATE unsigned balance_timeout;
 FORWARD _PROTOTYPE( int schedule_process, (struct schedproc * rmp)	);
 FORWARD _PROTOTYPE( void balance_queues, (struct timer *tp)		);
 
+#define PROCESS_IN_USER_Q(x) ((x)->priority >= MAX_USER_Q && (x)->priority <= MIN_USER_Q)
 
 #define DEFAULT_USER_TIME_SLICE 200
 
@@ -140,7 +141,7 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 		rmp->time_slice = schedproc[parent_nr_n].time_slice;
         rmp->ticket_num = 5;
         rmp->user_p = 1;            /*note that this process is an user process*/
-		printf("start scheduling at ticket. %d\n", rmp->ticket_num);
+		printf("start scheduling ticket=%d priority=%d\n", rmp->ticket_num ,rmp->priority);
 		break;
 
 	default:
@@ -264,8 +265,10 @@ PRIVATE void balance_queues(struct timer *tp)
 
     printf("balance queue\n");
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++) {
-        if((rmp->priority!=0)&&(rmp->user_p!=1))
-		printf("%d_%d ", rmp->priority,rmp->user_p);
+        if (rmp->flags & IN_USE) {
+            if((rmp->priority!=0)&&(rmp->user_p!=1));
+		    /*printf("%d_%d ", rmp->priority,rmp->user_p);*/
+        }
 	}
 	printf("\n");
 
@@ -287,8 +290,26 @@ PRIVATE void balance_queues(struct timer *tp)
  *===========================================================================*/
 int play_lottery(){
 
+    struct schedproc *rmp;
+	int proc_nr;
+	int nTickets = 0;
+	int lucky_num;
+	int old_priority;
+	int result = -1;
+
+    for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){      /* scan the Q, get the total number of tickets */
+		if ((rmp->flags & IN_USE) && PROCESS_IN_USER_Q(rmp)&&(rmp->user_p==0)){
+			nTickets += rmp->ticket_num;
+        }
+	}
+
+	lucky_num = nTickets? rand() % nTickets : 0;		/* set the number we're going to choose next */
+	printf("gathered %d tickets in total\n", nTickets);
+	printf("priority:%d\n", rmp->priority);
+	printf("lucky_num = %d\n", lucky_num);
+
+
     printf("start play_lottery\n");
     return 0;
-
 }
 
