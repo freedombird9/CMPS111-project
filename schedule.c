@@ -22,6 +22,7 @@ PRIVATE int gloTicket;
 
 FORWARD _PROTOTYPE( int schedule_process, (struct schedproc * rmp)	);
 FORWARD _PROTOTYPE( void balance_queues, (struct timer *tp)		);
+#define MAX_TICKET 5;
 
 #define PROCESS_IN_USER_Q(x) ((x)->priority >= MAX_USER_Q && (x)->priority <= MIN_USER_Q)
 
@@ -143,9 +144,10 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 			return rv;
 		rmp->priority = USER_Q; /*schedproc[parent_nr_n].priority;*/
 		rmp->time_slice = schedproc[parent_nr_n].time_slice;
-       		rmp->ticket_num = 5;
-        	rmp->user_p = 1;            /*note that this process is an user process*/
-       		gloTicket = gloTicket + 5;
+        if(rmp->time_slice==USER_QUANTUM)
+       	    allot_ticket(rmp,1);
+        rmp->user_p = 1;            /*note that this process is an user process*/
+       	gloTicket = gloTicket + rmp->ticket_num;
 		printf("start scheduling ticket=%d priority=%d USER_Q=%d\n", rmp->ticket_num ,rmp->priority,USER_Q);
 		break;
 
@@ -156,7 +158,7 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 
 	/* Take over scheduling the process. The kernel reply message populates
 	 * the processes current priority and its time slice */
-	if ((rv = sys_schedctl(0, rmp->endpoint, 0, 0)) != OK) {
+	if ((rv = sys_schedctl(0, rmp->endpoint, 0, 0,0)) != OK) {
 		printf("Sched: Error taking over scheduling for %d, kernel said %d\n",
 			rmp->endpoint, rv);
 		return rv;
@@ -223,8 +225,8 @@ PUBLIC int do_nice(message *m_ptr)
 /*		rmp->priority     = old_q;
 		rmp->max_priority = old_max_q;  */
 	}
-	
-	return rv;	
+
+	return rv;
 }
 
 /*===========================================================================*
@@ -235,7 +237,7 @@ PRIVATE int schedule_process(struct schedproc * rmp)
 	int rv;
 
 	if ((rv = sys_schedule(rmp->endpoint, rmp->priority,
-			rmp->time_slice)) != OK) {
+			rmp->time_slice,0)) != OK) {
 		printf("SCHED: An error occurred when trying to schedule %d: %d\n",
 		rmp->endpoint, rv);
 	}
@@ -273,8 +275,8 @@ PRIVATE void balance_queues(struct timer *tp)
     /*printf("balance queue\n");*/
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++) {
         	if (rmp->flags & IN_USE) {
-           		if((rmp->priority!=0)&&(rmp->user_p==1));
-		    /*printf("%d_%d ", rmp->priority,rmp->user_p);*/
+           		if((rmp->priority!=0)&&(rmp->user_p==1))
+		    /*printf("%d_%d ", rmp->priority,rmp->user_p);*/;
         	}
 	}
 	/*printf("gloTicket = %d\n",gloTicket);*/
@@ -282,11 +284,20 @@ PRIVATE void balance_queues(struct timer *tp)
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
 		if (rmp->flags & IN_USE) {
 			if (rmp->priority > rmp->max_priority) {
-                		if(rmp->user_p!=1){
-			    		rmp->priority -= 1;
-				    	schedule_process(rmp);
-                		}
-            		}
+                	if(rmp->user_p!=1){
+			    	    rmp->priority -= 1;
+				        schedule_process(rmp);
+                	}
+                    if(rmp->user_p==1){
+                        if((rmp->time_slice<USER_QUANTUM)&&(rmp->time_slice>0)){
+                            if(rmp->ticket_num < MAX_TICKET){
+                                old_ticket=rmp->ticket_num;
+                                allot_ticket(rmp,1);
+                                printf("changed ticket from %d to %d time_slice=%d\n",old_ticket,rmp->ticket_num,rmp->time_slice);
+                            }
+                        }
+                    }
+            }
 		}
 	}
 
@@ -303,6 +314,7 @@ int play_lottery(){
 	int lucky_num;
 	int old_priority;
 	int result = -1;
+    int old_ticket;
 
     	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){      /* scan the Q, get the total number of tickets */
 		if ((rmp->flags & IN_USE) && PROCESS_IN_USER_Q(rmp)&&(rmp->user_p==1)){
@@ -320,11 +332,16 @@ int play_lottery(){
             		if (lucky_num > 0)
 				lucky_num -= rmp->ticket_num;		 /* looking for the lucky process by counting */
            		if (lucky_num <= 0) {
-				rmp->priority = MAX_USER_Q;
-				result = OK;
-				printf("lucky process chosen rmp->priority %d MAX_USER_Q %d\n", rmp->priority, MAX_USER_Q);
-                		schedule_process(rmp);
-               			break;
+				    rmp->priority = MAX_USER_Q;
+				    result = OK;
+				    printf("lucky process chosen rmp->priority %d MAX_USER_Q %d\n", rmp->priority, MAX_USER_Q);
+                    schedule_process(rmp);
+                    if(rmp->ticket>2){
+                        old_ticket=rmp->ticket_num;
+                        allot_ticket(rmp,-1);
+                        printf("changed ticket from %d to %d\n",old_ticket,rmp->ticket_num);
+                    }
+               		break;
 			}
         	}
     	}
