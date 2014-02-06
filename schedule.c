@@ -22,7 +22,6 @@ PRIVATE unsigned balance_timeout;
 FORWARD _PROTOTYPE( int schedule_process, (struct schedproc * rmp)	);
 FORWARD _PROTOTYPE( void balance_queues, (struct timer *tp)		);
 
-int play_lottery();
 
 #define DEFAULT_USER_TIME_SLICE 200
 
@@ -50,8 +49,9 @@ PUBLIC int do_noquantum(message *m_ptr)
     }
 
 	if (rmp->user_p!=1) {
-		rmp->priority += 1; /* lower priority */
-        printf("k_p out of qua\n");
+        if(rmp->priority<=6)
+		    rmp->priority += 1; /* lower priority */
+        printf("k_p out of qua new_q=%d\n", rmp->priority);
 	}
 
 
@@ -125,7 +125,8 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 		 * from the parent */
 		rmp->priority   = rmp->max_priority;
 		rmp->time_slice = (unsigned) m_ptr->SCHEDULING_QUANTUM;
-		rmp->user_p = 0;            /*note that this process is a kernel process*/
+		rmp->user_p = 2;            /*note that this process is a kernel process*/
+        /*rmp->ticket_num = 1;*/
 		break;
 
 	case SCHEDULING_INHERIT:
@@ -135,10 +136,9 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 		if ((rv = sched_isokendpt(m_ptr->SCHEDULING_PARENT,
 				&parent_nr_n)) != OK)
 			return rv;
-
 		rmp->priority = schedproc[parent_nr_n].priority;
 		rmp->time_slice = schedproc[parent_nr_n].time_slice;
-		rmp->ticket_num = 5;
+        rmp->ticket_num = 5;
         rmp->user_p = 1;            /*note that this process is an user process*/
 		printf("start scheduling at ticket. %d\n", rmp->ticket_num);
 		break;
@@ -256,15 +256,16 @@ PUBLIC void init_scheduling(void)
  * quantum. This function will find all proccesses that have been bumped down,
  * and pulls them back up. This default policy will soon be changed.
  */
-PRIVATE
- void balance_queues(struct timer *tp)
+PRIVATE void balance_queues(struct timer *tp)
 {
 	struct schedproc *rmp;
 	int proc_nr;
     int rv;
 
+    printf("balance queue\n");
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++) {
-		printf("%d,%d,%d ", rmp->ticket_num, rmp->priority,rmp->user_p);
+        if((rmp->priority!=0)&&(rmp->user_p!=1))
+		printf("%d_%d ", rmp->priority,rmp->user_p);
 	}
 	printf("\n");
 
@@ -276,24 +277,18 @@ PRIVATE
 				    schedule_process(rmp);
                 }
             }
-			}
+		}
 	}
 
     set_timer(&sched_timer, balance_timeout, balance_queues, 0);
 }
-/*******************************************************************/
-               play_lottery
-/*******************************************************************/
-
+/*===========================================================================*
+ *				play_lottery				     *
+ *===========================================================================*/
 int play_lottery(){
-	struct schedproc *rmp;
-	int proc_nr;
-	int nTickets = 0;
-	int lucky_num;
-	int old_priority;
-	int result = -1;
 
     printf("start play_lottery\n");
     return 0;
+
 }
 
