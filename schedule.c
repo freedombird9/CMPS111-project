@@ -288,15 +288,6 @@ PRIVATE void balance_queues(struct timer *tp)
 			    	    rmp->priority -= 1;
 				        schedule_process(rmp);
                 	}
-                    if(rmp->user_p==1){
-                        if((rmp->time_slice<USER_QUANTUM)&&(rmp->time_slice>0)){
-                            if(rmp->ticket_num < MAX_TICKET){
-                                old_ticket=rmp->ticket_num;
-                                allot_ticket(rmp,1);
-                                printf("changed ticket from %d to %d time_slice=%d\n",old_ticket,rmp->ticket_num,rmp->time_slice);
-                            }
-                        }
-                    }
             }
 		}
 	}
@@ -336,7 +327,7 @@ int play_lottery(){
 				    result = OK;
 				    printf("lucky process chosen rmp->priority %d MAX_USER_Q %d\n", rmp->priority, MAX_USER_Q);
                     schedule_process(rmp);
-                    if(rmp->ticket>2){
+                    if(rmp->ticket_num>2){
                         old_ticket=rmp->ticket_num;
                         allot_ticket(rmp,-1);
                         printf("changed ticket from %d to %d\n",old_ticket,rmp->ticket_num);
