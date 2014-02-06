@@ -313,8 +313,20 @@ int play_lottery(){
 	printf("priority:%d\n", rmp->priority);
 	printf("lucky_num = %d\n", lucky_num);
 
-
-    printf("start play_lottery\n");
+    for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){
+		if ((rmp->flags & IN_USE) &&  PROCESS_IN_USER_Q(rmp) && (rmp->user_p==1)) {
+            if (lucky_num > 0)
+				lucky_num -= rmp->ticket_num;		 /* looking for the lucky process by counting */
+            if (lucky_num <= 0) {
+				rmp->priority = MAX_USER_Q;
+				result = OK;
+				printf("lucky process chosen rmp->priority %d MAX_USER_Q %d\n", rmp->priority, MAX_USER_Q);
+                schedule_process(rmp);
+                break;
+			}
+        }
+    }
+    printf("end play_lottery\n");
     return 0;
 }
 
