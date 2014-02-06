@@ -16,6 +16,7 @@
 
 PRIVATE timer_t sched_timer;
 PRIVATE unsigned balance_timeout;
+PRIVATE int gloTicket;
 
 #define BALANCE_TIMEOUT	5 /* how often to balance queues in seconds */
 
@@ -45,7 +46,7 @@ PUBLIC int do_noquantum(message *m_ptr)
 	printf("no quantum priority: %d\n", rmp->priority);
 
     if(rmp->user_p==1){
-        rmp->priority += 1;
+        rmp->priority = USER_Q;
         play_lottery();
     }
 
@@ -83,6 +84,8 @@ PUBLIC int do_stop_scheduling(message *m_ptr)
 	rmp->flags = 0; /*&= ~IN_USE;*/
     printf("k_p stop sche\n");
 	printf("do stop scheduling\n");
+    if(rmp->user_p==1)
+        gloTicket = gloTicket -5;
     play_lottery();
 	return OK;
 }
@@ -128,7 +131,7 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 		rmp->time_slice = (unsigned) m_ptr->SCHEDULING_QUANTUM;
 		rmp->user_p = 2;            /*note that this process is a kernel process*/
         /*rmp->ticket_num = 1;*/
-		break;
+        break;
 
 	case SCHEDULING_INHERIT:
 		/* Inherit current priority and time slice from parent. Since there
@@ -137,11 +140,12 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 		if ((rv = sched_isokendpt(m_ptr->SCHEDULING_PARENT,
 				&parent_nr_n)) != OK)
 			return rv;
-		rmp->priority = schedproc[parent_nr_n].priority;
+		rmp->priority = USER_Q; /*schedproc[parent_nr_n].priority;*/
 		rmp->time_slice = schedproc[parent_nr_n].time_slice;
         rmp->ticket_num = 5;
         rmp->user_p = 1;            /*note that this process is an user process*/
-		printf("start scheduling ticket=%d priority=%d\n", rmp->ticket_num ,rmp->priority);
+        gloTicket = gloTicket + 5;
+		printf("start scheduling ticket=%d priority=%d USER_Q=%d\n", rmp->ticket_num ,rmp->priority,USER_Q);
 		break;
 
 	default:
@@ -266,11 +270,11 @@ PRIVATE void balance_queues(struct timer *tp)
     printf("balance queue\n");
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++) {
         if (rmp->flags & IN_USE) {
-            if((rmp->priority!=0)&&(rmp->user_p!=1));
-		    /*printf("%d_%d ", rmp->priority,rmp->user_p);*/
+            if((rmp->priority!=0)&&(rmp->user_p==1));
+		    printf("%d_%d ", rmp->priority,rmp->user_p);
         }
 	}
-	printf("\n");
+	printf("gloTicket = %d\n",gloTicket);
 
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
 		if (rmp->flags & IN_USE) {
@@ -298,8 +302,9 @@ int play_lottery(){
 	int result = -1;
 
     for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){      /* scan the Q, get the total number of tickets */
-		if ((rmp->flags & IN_USE) && PROCESS_IN_USER_Q(rmp)&&(rmp->user_p==0)){
+		if ((rmp->flags & IN_USE) && PROCESS_IN_USER_Q(rmp)&&(rmp->user_p==1)){
 			nTickets += rmp->ticket_num;
+            printf("priority=%d ticket_num=%d\n", rmp->priority,rmp->ticket_num);
         }
 	}
 
