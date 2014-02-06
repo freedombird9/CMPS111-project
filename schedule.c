@@ -22,6 +22,8 @@ PRIVATE unsigned balance_timeout;
 FORWARD _PROTOTYPE( int schedule_process, (struct schedproc * rmp)	);
 FORWARD _PROTOTYPE( void balance_queues, (struct timer *tp)		);
 
+int play_lottery();
+
 #define DEFAULT_USER_TIME_SLICE 200
 
 /*===========================================================================*
@@ -42,8 +44,10 @@ PUBLIC int do_noquantum(message *m_ptr)
 	rmp = &schedproc[proc_nr_n];
 	printf("no quantum priority: %d\n", rmp->priority);
 
-    if(rmp->user_p==1)
+    if(rmp->user_p==1){
+        rmp->priority += 1;
         play_lottery();
+    }
 
 	if (rmp->user_p!=1) {
 		rmp->priority += 1; /* lower priority */
@@ -74,18 +78,11 @@ PUBLIC int do_stop_scheduling(message *m_ptr)
 		"%ld\n", m_ptr->SCHEDULING_ENDPOINT);
 		return EBADEPT;
 	}
-
-    if(rmp->user_p==1){
-        play_lottery();
-        rmp->flags = 0;
-    }
-
-    else {
-	    rmp = &schedproc[proc_nr_n];
-	    rmp->flags = 0; /*&= ~IN_USE;*/
-        printf("k_p stop sche\n");
-    }
+    rmp = &schedproc[proc_nr_n];
+	rmp->flags = 0; /*&= ~IN_USE;*/
+    printf("k_p stop sche\n");
 	printf("do stop scheduling\n");
+    play_lottery();
 	return OK;
 }
 
@@ -264,24 +261,25 @@ PRIVATE
 {
 	struct schedproc *rmp;
 	int proc_nr;
+    int rv;
+
 	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++) {
 		printf("%d,%d,%d ", rmp->ticket_num, rmp->priority,rmp->user_p);
 	}
 	printf("\n");
-/*	struct schedproc *rmp;
-	int proc_nr;
-	int rv;
 
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
 		if (rmp->flags & IN_USE) {
 			if (rmp->priority > rmp->max_priority) {
-				rmp->priority -= 1;
-				schedule_process(rmp);
+                if(rmp->user_p!=1){
+			    	rmp->priority -= 1;
+				    schedule_process(rmp);
+                }
+            }
 			}
-		}
 	}
 
-	set_timer(&sched_timer, balance_timeout, balance_queues, 0);*/
+    set_timer(&sched_timer, balance_timeout, balance_queues, 0);
 }
 /*******************************************************************/
                play_lottery
