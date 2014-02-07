@@ -12,7 +12,7 @@ test1. Then you can examine it in the way that we described in detail under the 
 
 All the files needed for the dynamic lottery (including test files) are in the directory case2. To run second test, type:
 
-cc longrun.c
+cc longrun2.c
 ./a.out 1 10000 20000 >>nul & ./a.out 2 10000 20000 >>nul & ./a.out 3 10000 20000 >>nul
 
 The output file nul is just used to consume the screen's output information, so that you can examine the scheduler's output
@@ -20,7 +20,19 @@ information to check the scheduling algorithm's correctness.
 
 ==== Test for Our Own Design ====
 
+ll the files needed for the dynamic lottery (including test files) are in the directory case2. To run second test, type:
 
+1.
+cc longrun2.c
+./a.out 1 10000 20000 >>nul & ./b.out 2 10000 20000 >>nul
+
+2.
+cc longrun2.c
+cc longrun3.c -o b.out
+./a.out 1 10000 20000 >>nul & ./b.out 2 10000 20000 >>nul 
+
+The output file nul is just used to consume the screen's output information, so that you can examine the scheduler's output
+information to check the scheduling algorithm's correctness.
 
 
 
