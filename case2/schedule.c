@@ -34,8 +34,13 @@ FORWARD _PROTOTYPE( void balance_queues, (struct timer *tp)		);
 
 PUBLIC int do_noquantum(message *m_ptr)
 {
+
 	register struct schedproc *rmp;
 	int rv, proc_nr_n;
+    int b_times;
+    int o_ticket;
+    int i;
+
 	/*printf("start do no quantum\n");*/
 	if (sched_isokendpt(m_ptr->m_source, &proc_nr_n) != OK) {
 		printf("SCHED: WARNING: got an invalid endpoint in OOQ msg %u.\n",
@@ -44,21 +49,29 @@ PUBLIC int do_noquantum(message *m_ptr)
 	}
 
 	rmp = &schedproc[proc_nr_n];
-	printf("n_q p: %d\n", rmp->priority);
+	/*printf("n_q p: %d\n", rmp->priority);*/
+    o_ticket=rmp->ticket_num;
 
     if(rmp->user_p==1){
         rmp->priority = USER_Q;
+        b_times=m_ptr->SCHEDULING_ACNT_IPC_SYNC;
+        for(i=0;i<b_times;i++){
+            if((rmp->ticket_num)<5)
+                rmp->ticket_num=rmp->ticket_num+1;
+            else
+                break;
+        }
+        printf("blocked times=%d ticket change from %d to %d\n",m_ptr->SCHEDULING_ACNT_IPC_SYNC,o_ticket,rmp->ticket_num);
         play_lottery();
     }
 
 	if (rmp->user_p!=1) {
         if(rmp->priority<=6)
 		    rmp->priority += 1; /* lower priority */
-        printf("k_p new_q=%d\n", rmp->priority);
+        /*printf("k_p new_q=%d\n", rmp->priority);*/
 	}
 
-
-	if ((rv = schedule_process(rmp)) != OK) {
+    	if ((rv = schedule_process(rmp)) != OK) {
 		return rv;
 	}
 	return OK;
@@ -72,7 +85,7 @@ PUBLIC int do_stop_scheduling(message *m_ptr)
 	register struct schedproc *rmp;
 	int rv, proc_nr_n;
 
-    printf("st_p quantum=%d",rmp->time_slice);
+    /*printf("st_p quantum=%d",rmp->time_slice);*/
 	/* check who can send you requests */
 	if (!accept_message(m_ptr))
 		return EPERM;
@@ -84,7 +97,7 @@ PUBLIC int do_stop_scheduling(message *m_ptr)
 	}
     rmp = &schedproc[proc_nr_n];
 	rmp->flags = 0; /*&= ~IN_USE;*/
-    printf("k_p stop sche\n");
+    /*printf("k_p stop sche\n");*/
 	/*printf("do stop scheduling\n");*/
     if(rmp->user_p==1)
         gloTicket = gloTicket -5;
@@ -145,10 +158,10 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 		rmp->priority = USER_Q; /*schedproc[parent_nr_n].priority;*/
 		rmp->time_slice = schedproc[parent_nr_n].time_slice;
         if(rmp->time_slice==USER_QUANTUM)
-       	    allot_ticket(rmp,1);
+       	    allot_ticket(rmp,5);
         rmp->user_p = 1;            /*note that this process is an user process*/
        	gloTicket = gloTicket + rmp->ticket_num;
-		printf("start scheduling ticket=%d priority=%d USER_Q=%d\n", rmp->ticket_num ,rmp->priority,USER_Q);
+		/*printf("start scheduling ticket=%d priority=%d USER_Q=%d\n", rmp->ticket_num ,rmp->priority,USER_Q);*/
 		break;
 
 	default:
@@ -315,8 +328,8 @@ int play_lottery(){
     	}
 
 	lucky_num = nTickets? rand() % nTickets : 0;		/* set the number we're going to choose next */
-	printf("gathered %d tickets in total\n", nTickets);
-	printf("lucky_num = %d\n", lucky_num);
+	/*printf("gathered %d tickets in total\n", nTickets);*/
+	/*printf("lucky_num = %d\n", lucky_num);*/
 
     	for (rmp = schedproc, proc_nr = 0; proc_nr < NR_PROCS; rmp++, proc_nr++){
 		if ((rmp->flags & IN_USE) &&  PROCESS_IN_USER_Q(rmp) && (rmp->user_p==1)) {
@@ -325,18 +338,18 @@ int play_lottery(){
            		if (lucky_num <= 0) {
 				    rmp->priority = MAX_USER_Q;
 				    result = OK;
-				    printf("lucky process chosen rmp->priority %d MAX_USER_Q %d\n", rmp->priority, MAX_USER_Q);
-                    schedule_process(rmp);
-                    if(rmp->ticket_num>2){
+				    printf("lucky process chosen rmp->priority %d MAX_USER_Q %d ticket=%d\n", rmp->priority, MAX_USER_Q,rmp->ticket_num);
+                    if(rmp->ticket_num>=2){
                         old_ticket=rmp->ticket_num;
                         allot_ticket(rmp,-1);
                         printf("changed ticket from %d to %d\n",old_ticket,rmp->ticket_num);
                     }
+                    schedule_process(rmp);
                		break;
 			}
         	}
     	}
-    	printf("end play_lottery\n");
+    	printf("##\n");
     	return 0;
 }
 
@@ -347,7 +360,7 @@ void allot_ticket(struct schedproc *rmp, int tickets)
 {
 	if ( (rmp->ticket_num + tickets) <= 100 ) {
 		rmp->ticket_num += tickets;
-		printf("alloted %d tickets\n", rmp->ticket_num);
+		/*printf("alloted %d tickets\n", rmp->ticket_num);*/
 	}
 
 	else rmp->ticket_num = 100;

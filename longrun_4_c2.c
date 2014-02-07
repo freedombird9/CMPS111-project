@@ -26,8 +26,6 @@ main (int argc, char *argv[])
   int	maxloops;
   int   no_p;
   int   n_print=0, o_print=0;
-  int   n_block_idx=0, o_block_idx=0;
-  int   scand;
 
   if (argc < 3 || argc > 4) {
     printf ("Usage: %s <id> <loop count> [max loops]\n", argv[0]);
@@ -64,17 +62,10 @@ main (int argc, char *argv[])
 	break;
       }
       n_print=n_print+1;
-      if((n_print-o_print)>100){
+      if((n_print-o_print)>10000){
           o_print=n_print;
         printf ("%s:%06d\n", idStr, iteration);
     }
-    n_block_idx=n_block_idx=+1;
-      if((n_block_idx-o_block_idx)>500){
-          n_block_idx=o_block_idx;
-          scanf ("%d\n", &scand);
-    }
-
-
       fflush (stdout);
       iteration += 1;
       i = 0;
