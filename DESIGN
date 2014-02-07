@@ -124,9 +124,14 @@ ticket from it if it has more than one ticket.
 
 ====== Our Own Design ======
 
+We would like to allot more tickets for I/O bound processes, since if the I/O bound process is finished earlier than CPU bound process, the CPU bound process may use the CPU for a long time. If the I/O bound process finished later than the CPU bound process, the CPU bound process may be interrupted more often by the I/O bound process.
+In addition of the second case, we implemented a more dynamic way for lottery scheduling. We added two global variables in the schedule.c, the one is the total number of blocks occurred, and the other one is the total number of tickets added to each process. After each call of do_noquantum(), we will update the values of the two variables. Also, we will set the two values 0 every time when we have called balance_queue() for 50 times.
+Assume there are x times of blocks in one quantum for a process, other than simply add one ticket to process for each block, we will increase the ticket number to (int)(totalAddTicketNum/totalBlockNum)*x. But if the average ticket per blocks is less than one, we will add one ticket for the process, which is the same as second case.
+For example. initially,if a process has 3 tickets and has blocked for 4 times, it will get 2 tickets in the second case and in this case. But another process, who also have 3 tickets and just been blocked for 2 times, it will be given 2 tickets in the second case but just one tickets in this case. Which means the I/O bound process gets more opportunities to run in this schedule policy. 
 
+We will modify the do_noquantum()and the balance_queue() function. In balance_queue(), we count the number it been called, when it has called for 50 times, set the total number of blocks and added tickets as well as the count variable for balance_queue() to 0, and start all over.
 
-
+In do_noquantum, we will allot ticket for user space process using the equation above, and update the two value at the end.
 
 
 ====== Tests ======
@@ -166,7 +171,11 @@ of blocks of a process by the time it runs out of quantum and its old and new ti
 to check whether the process's ticket number will be deducted by one when it receives a full quantum. It's easy to see whether it's running
 in a correct way by examing these values.
 
+Our Own Design :
 
+There are two steps of the test.
+First, we call the same longrun() for two times, and set the I/O call, which is the printf() in this case, to be relatively low. So in this case, the differences of ticket numbers for the processes are small.
+Second, we call two different longrun(), the number of I/O calls are different. If we examine the changes of their number of tickets, the differences will be bigger than the first one. 
 
 
 
