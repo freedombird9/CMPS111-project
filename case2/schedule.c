@@ -61,7 +61,7 @@ PUBLIC int do_noquantum(message *m_ptr)
             else
                 break;
         }
-        printf("blocked times=%d ticket change from %d to %d\n",m_ptr->SCHEDULING_ACNT_IPC_SYNC,o_ticket,rmp->ticket_num);
+        printf("blocked %d times， ticket no. changes from %d to %d\n",m_ptr->SCHEDULING_ACNT_IPC_SYNC,o_ticket,rmp->ticket_num);
         play_lottery();
     }
 
@@ -231,7 +231,6 @@ PUBLIC int do_nice(message *m_ptr)
 /*	rmp->max_priority = rmp->priority = new_q;  */
 	/* allot new tickets for the process */
 	allot_ticket(rmp, m_ptr->SCHEDULING_MAXPRIO);
-	printf("niced %d tickets\n", m_ptr->SCHEDULING_MAXPRIO);
 	if ((rv = schedule_process(rmp)) != OK) {
 		/* Something went wrong when rescheduling the process, roll
 		 * back the changes to proc struct */
@@ -338,11 +337,10 @@ int play_lottery(){
            		if (lucky_num <= 0) {
 				    rmp->priority = MAX_USER_Q;
 				    result = OK;
-				    printf("lucky process chosen rmp->priority %d MAX_USER_Q %d ticket=%d\n", rmp->priority, MAX_USER_Q,rmp->ticket_num);
                     if(rmp->ticket_num>=2){
                         old_ticket=rmp->ticket_num;
                         allot_ticket(rmp,-1);
-                        printf("changed ticket from %d to %d\n",old_ticket,rmp->ticket_num);
+                        printf("number of ticket changes from %d to %d\n",old_ticket,rmp->ticket_num);
                     }
                     schedule_process(rmp);
                		break;
