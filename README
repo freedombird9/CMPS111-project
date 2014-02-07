@@ -1,0 +1,26 @@
+==== Test for Basic Lottery ====
+
+All the files needed for the basic lottery scheduling (including test files) are in the directory case1. To run the first test for the basic lottery scheduling, type:
+
+cc longrun.c
+nice -n -20 ./a.out a 100 300000 >>test1 & nice -n 20 ./a.out b 100 300000 >>test1
+
+The nice command will assign process a and process b 12 and 20 tickets, respectively. The results are stored in the file
+test1. Then you can examine it in the way that we described in detail under the test section of the DESIGN document.
+
+==== Test for Dynamic Lottery ====
+
+All the files needed for the dynamic lottery (including test files) are in the directory case2. To run second test, type:
+
+cc longrun.c
+./a.out 1 10000 20000 >>nul & ./a.out 2 10000 20000 >>nul & ./a.out 3 10000 20000 >>nul
+
+The output file nul is just used to consume the screen's output information, so that you can examine the scheduler's output
+information to check the scheduling algorithm's correctness.
+
+==== Test for Our Own Design ====
+
+
+
+
+
