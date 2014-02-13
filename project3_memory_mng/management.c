@@ -76,5 +76,8 @@ void *memalloc(int handle, long n_bytes) {
     }
     
     if(fl == 1)
-        return (void*) fl_alloc(n_bytes, memstart, flag);    /* call the allocator to do the job */
+        struct page *freemem = memstart;
+        freemem->pre = NULL;
+        freememe->next = NULL;
+        return (void*) fl_alloc(n_bytes, flag);    /* call the allocator to do the job */
 }
