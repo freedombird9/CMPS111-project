@@ -62,7 +62,7 @@ main (int argc, char *argv[])
 	break;
       }
       n_print=n_print+1;
-      if((n_print-o_print)>10000){
+      if((n_print-o_print)>700){
           o_print=n_print;
         printf ("%s:%06d\n", idStr, iteration);
     }

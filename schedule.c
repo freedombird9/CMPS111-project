@@ -16,7 +16,10 @@
 
 PRIVATE timer_t sched_timer;
 PRIVATE unsigned balance_timeout;
-PRIVATE int gloTicket;
+PRIVATE int ticPerBloc;          /*the averange number of additonal tickets that a process get fer blocks*/
+PRIVATE int totalBlockNum=0;
+PRIVATE int totalAddTicketNum=0;
+PRIVATE int resetTPBcount=0;
 
 #define BALANCE_TIMEOUT	5 /* how often to balance queues in seconds */
 
@@ -38,8 +41,11 @@ PUBLIC int do_noquantum(message *m_ptr)
 	register struct schedproc *rmp;
 	int rv, proc_nr_n;
     int b_times;
-    int o_ticket;
+    int o_ticket, n_ticket;
+    int ori_add=0;
+    int may_add=0;
     int i;
+    int flag=0;
 
 	/*printf("start do no quantum\n");*/
 	if (sched_isokendpt(m_ptr->m_source, &proc_nr_n) != OK) {
@@ -55,13 +61,40 @@ PUBLIC int do_noquantum(message *m_ptr)
     if(rmp->user_p==1){
         rmp->priority = USER_Q;
         b_times=m_ptr->SCHEDULING_ACNT_IPC_SYNC;
+        /*printf("blocked times=%d ticket change from %d to %d\n",m_ptr->SCHEDULING_ACNT_IPC_SYNC,o_ticket,rmp->ticket_num);*/
         for(i=0;i<b_times;i++){
-            if((rmp->ticket_num)<5)
-                rmp->ticket_num=rmp->ticket_num+1;
-            else
-                break;
+            if((rmp->ticket_num+ori_add)<5){
+                /*rmp->ticket_num=rmp->ticket_num+1;*/
+                /*totalAddTicketNum=totalAddTicketNum+1;*/
+                ori_add=ori_add+1;
+            }
+            break;
         }
-        printf("blocked %d times， ticket no. changes from %d to %d\n",m_ptr->SCHEDULING_ACNT_IPC_SYNC,o_ticket,rmp->ticket_num);
+        if(b_times>0){
+            if(totalBlockNum==0||(totalAddTicketNum==0 && ori_add!=0)){
+                rmp->ticket_num=rmp->ticket_num+ori_add;
+                totalAddTicketNum=totalAddTicketNum+ori_add;
+                flag=1;
+            }
+            if(totalBlockNum!=0 && flag!=1){
+                may_add=(int)(totalAddTicketNum/totalBlockNum)*b_times;
+                if(may_add==0)
+                    may_add=1;
+                if(may_add<ori_add){
+                    rmp->ticket_num=rmp->ticket_num+may_add;
+                    totalAddTicketNum=totalAddTicketNum+may_add;
+                }
+                else{
+                    rmp->ticket_num=rmp->ticket_num+ori_add;
+                    totalAddTicketNum=totalAddTicketNum+ori_add;
+                }
+            }
+        }
+        n_ticket=rmp->ticket_num;
+        if(o_ticket == n_ticket)
+            totalBlockNum=totalBlockNum+b_times;
+        printf("blocked times=%d ticket change from %d to %d avg=%d\n",m_ptr->SCHEDULING_ACNT_IPC_SYNC,o_ticket,rmp->ticket_num,totalAddTicketNum/totalBlockNum);
+        printf("totalAddTicketNum=%d totalBlockNum=%d\n", totalAddTicketNum,totalBlockNum);
         play_lottery();
     }
 
@@ -71,7 +104,7 @@ PUBLIC int do_noquantum(message *m_ptr)
         /*printf("k_p new_q=%d\n", rmp->priority);*/
 	}
 
-    	if ((rv = schedule_process(rmp)) != OK) {
+    if ((rv = schedule_process(rmp)) != OK) {
 		return rv;
 	}
 	return OK;
@@ -99,8 +132,6 @@ PUBLIC int do_stop_scheduling(message *m_ptr)
 	rmp->flags = 0; /*&= ~IN_USE;*/
     /*printf("k_p stop sche\n");*/
 	/*printf("do stop scheduling\n");*/
-    if(rmp->user_p==1)
-        gloTicket = gloTicket -5;
     play_lottery();
 	return OK;
 }
@@ -160,7 +191,6 @@ PUBLIC int do_start_scheduling(message *m_ptr)
         if(rmp->time_slice==USER_QUANTUM)
        	    allot_ticket(rmp,5);
         rmp->user_p = 1;            /*note that this process is an user process*/
-       	gloTicket = gloTicket + rmp->ticket_num;
 		/*printf("start scheduling ticket=%d priority=%d USER_Q=%d\n", rmp->ticket_num ,rmp->priority,USER_Q);*/
 		break;
 
@@ -231,6 +261,7 @@ PUBLIC int do_nice(message *m_ptr)
 /*	rmp->max_priority = rmp->priority = new_q;  */
 	/* allot new tickets for the process */
 	allot_ticket(rmp, m_ptr->SCHEDULING_MAXPRIO);
+	printf("niced %d tickets\n", m_ptr->SCHEDULING_MAXPRIO);
 	if ((rv = schedule_process(rmp)) != OK) {
 		/* Something went wrong when rescheduling the process, roll
 		 * back the changes to proc struct */
@@ -304,6 +335,14 @@ PRIVATE void balance_queues(struct timer *tp)
 		}
 	}
 
+    if(resetTPBcount<50)
+        resetTPBcount=resetTPBcount+1;
+    else{
+        resetTPBcount=0;
+        totalAddTicketNum=0;
+        totalBlockNum=0;
+    }
+
     set_timer(&sched_timer, balance_timeout, balance_queues, 0);
 }
 /*===========================================================================*
@@ -337,10 +376,11 @@ int play_lottery(){
            		if (lucky_num <= 0) {
 				    rmp->priority = MAX_USER_Q;
 				    result = OK;
+				    printf("lucky process chosen rmp->priority %d MAX_USER_Q %d ticket=%d\n", rmp->priority, MAX_USER_Q,rmp->ticket_num);
                     if(rmp->ticket_num>=2){
                         old_ticket=rmp->ticket_num;
                         allot_ticket(rmp,-1);
-                        printf("number of ticket changes from %d to %d\n",old_ticket,rmp->ticket_num);
+                        printf("changed ticket from %d to %d\n",old_ticket,rmp->ticket_num);
                     }
                     schedule_process(rmp);
                		break;
@@ -356,12 +396,12 @@ int play_lottery(){
  *===========================================================================*/
 void allot_ticket(struct schedproc *rmp, int tickets)
 {
-	if ( (rmp->ticket_num + tickets) <= 100 ) {
+	if ( (rmp->ticket_num + tickets) <= 5 ) {
 		rmp->ticket_num += tickets;
 		/*printf("alloted %d tickets\n", rmp->ticket_num);*/
 	}
 
-	else rmp->ticket_num = 100;
+	else rmp->ticket_num = 5;
 }
 
 
