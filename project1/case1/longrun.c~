@@ -62,15 +62,15 @@ main (int argc, char *argv[])
 	break;
       }
       n_print=n_print+1;
-      if((n_print-o_print)>700){
+      if((n_print-o_print)>100){
           o_print=n_print;
         printf ("%s:%06d\n", idStr, iteration);
-    }
+      }
       fflush (stdout);
       iteration += 1;
       i = 0;
-      for(no_p=0;no_p<10000;no_p++)
-          ;
+      /*for(no_p=0;no_p<10000;no_p++)
+          ;   */
     }
   }
   /* Print a value for v that's unpredictable so the compiler can't
@@ -78,3 +78,4 @@ main (int argc, char *argv[])
      can't tell in advance that it's not an infinite loop. */
   printf ("The final value of v is 0x%08x\n", v);
 }
+

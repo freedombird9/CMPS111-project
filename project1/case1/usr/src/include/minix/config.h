@@ -27,12 +27,12 @@
 #define IBM_PC       _MACHINE_IBM_PC
 
 /* Number of slots in the process table for non-kernel processes. The number
- * of system processes defines how many processes with special privileges
- * there can be. User processes share the same properties and count for one.
+ * of system processes defines how many processes with special privileges 
+ * there can be. User processes share the same properties and count for one. 
  *
  * These can be changed in sys_config.h.
  */
-#define NR_PROCS 	  _NR_PROCS
+#define NR_PROCS 	  _NR_PROCS 
 #define NR_SYS_PROCS      _NR_SYS_PROCS
 #define NR_SYS_CHUNKS	  BITMAP_CHUNKS(NR_SYS_PROCS)
 
@@ -42,7 +42,7 @@
 /* DMA_SECTORS may be increased to speed up DMA based drivers. */
 #define DMA_SECTORS        1	/* DMA buffer size (must be >= 1) */
 
-/* Which processes should receive diagnostics from the kernel and system?
+/* Which processes should receive diagnostics from the kernel and system? 
  * Directly sending it to TTY only displays the output. Sending it to the
  * log driver will cause the diagnostics to be buffered and displayed.
  * Messages are sent by src/lib/sysutil/kputc.c to these processes, in
@@ -77,8 +77,8 @@
  */
 #define NR_SCHED_QUEUES   16	/* MUST equal minimum priority + 1 */
 #define TASK_Q		   0	/* highest, used for kernel tasks */
-#define MAX_USER_Q  	   7  /* highest priority for user processes */
-#define USER_Q  	  11 /*((MIN_USER_Q - MAX_USER_Q) / 2 + MAX_USER_Q) * default_user_time_slice
+#define MAX_USER_Q  	   7    /* highest priority for user processes */   
+#define USER_Q  	   11  /* ((MIN_USER_Q - MAX_USER_Q) / 2 + MAX_USER_Q)  default
 						(should correspond to nice 0) */
 #define MIN_USER_Q	  (NR_SCHED_QUEUES - 1)	/* minimum priority for user
 						   processes */

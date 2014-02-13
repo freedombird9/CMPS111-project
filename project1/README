@@ -1,3 +1,10 @@
+Name: Yongfeng Zhang
+CATS: yozhang
+
+Name: Xiaoyuan Lu
+CATS: xl37136 
+
+
 ==== Test for Basic Lottery ====
 
 All the files needed for the basic lottery scheduling (including test files) are in the directory case1. To run the first test for the basic lottery scheduling, type:
@@ -20,7 +27,7 @@ information to check the scheduling algorithm's correctness.
 
 ==== Test for Our Own Design ====
 
-ll the files needed for the dynamic lottery (including test files) are in the directory case2. To run second test, type:
+All the files needed for the dynamic lottery (including test files) are in the directory case2. To run second test, type:
 
 1.
 cc longrun2.c
@@ -33,6 +40,7 @@ cc longrun3.c -o b.out
 
 The output file nul is just used to consume the screen's output information, so that you can examine the scheduler's output
 information to check the scheduling algorithm's correctness.
+
 
 
 

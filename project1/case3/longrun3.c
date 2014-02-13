@@ -62,7 +62,7 @@ main (int argc, char *argv[])
 	break;
       }
       n_print=n_print+1;
-      if((n_print-o_print)>2000){
+      if((n_print-o_print)>700){
           o_print=n_print;
         printf ("%s:%06d\n", idStr, iteration);
     }
@@ -78,3 +78,4 @@ main (int argc, char *argv[])
      can't tell in advance that it's not an infinite loop. */
   printf ("The final value of v is 0x%08x\n", v);
 }
+
