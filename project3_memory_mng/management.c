@@ -76,5 +76,5 @@ void *memalloc(int handle, long n_bytes) {
     }
     
     if(fl == 1)
-        return (void*) fl_alloc(long n_bytes, memstart, flag);
+        return (void*) fl_alloc(n_bytes, memstart, flag);    /* call the allocator to do the job */
 }
