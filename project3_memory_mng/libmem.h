@@ -11,7 +11,8 @@ struct fl_node{
     unsigned long size;
     int used;
     void *blockstart;
-    struct fl_node* next;
+    struct fl_node *next;
+    struct fl_node *next_candidate;
 };
 
 struct bu_node{

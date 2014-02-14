@@ -89,3 +89,9 @@ void *memalloc(int handle, long n_bytes){
 void memfree (void *region){
 
 }
+
+void print_fl(struct handle *this_handle){
+    struct fl_node *walk;
+    walk=this_handle->freelist;
+
+}
