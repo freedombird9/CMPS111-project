@@ -16,6 +16,7 @@ struct fl_node{
 
 struct bu_node{
     int used;
+    struct bu_node *parent;
     struct bu_node *left;
     struct bu_node *right;
 };
@@ -27,6 +28,8 @@ struct handle{
 
     struct fl_node *freelist;
     struct bu_node *bitmap;
+    int bu_depth;
+    int page_size;
 } handlers[MAX_HANDLE];
 
 #endif

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "libmem.h"
 
 int isValid(long number){
@@ -13,7 +14,7 @@ int isValid(long number){
   return 0;
 }
 
-void initBitmap(int depth, struct bu_node **root){
+void initBitmap(int depth, struct bu_node *root){
   root->used = 0;
   if(depth == 0){
     root->left = NULL;
@@ -23,8 +24,10 @@ void initBitmap(int depth, struct bu_node **root){
     depth=depth-1;
     root->left = malloc(sizeof(struct bu_node));
     root->right = malloc(sizeof(struct bu_node));
-    initBitmap(depth, &root->left);
-    initBitmap(depth, &root->right);
+    root->right->parent=root;
+    root->left->parent=root;
+    initBitmap(depth, root->left);
+    initBitmap(depth, root->right);
   }
 }
 
@@ -35,13 +38,13 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
   int power = isValid(n_bytes);
   if (power)
     return -1;
-  handlers[handleCount].memstart = malloc(n_bytes);
   handlers[handleCount].freelist = handlers[handleCount].memstart;   /* keep the data structure inside the memory region */
   handlers[handleCount].flags = flags;
   handlers[handleCount].n_bytes = n_bytes;
 
   /* free list allocator */
   if (flags & 0x4) {            /* initiate free list allocator */
+    handlers[handleCount].memstart = malloc(n_bytes);
     handlers[handleCount].freelist->blockstart = handlers[handleCount].memstart + sizeof(struct fl_node);
     handlers[handleCount].freelist->size = n_bytes - sizeof(struct fl_node);
     handlers[handleCount].freelist->used = 0;		/* not used, allocatable */
@@ -50,8 +53,10 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
 
   else if (flags & 0x1){
     int depth = power - parm1 + 1;
-    handlers[handleCount].bitmap = malloc(sizeof(struct bu_node));
-    initBitmap(depth, &handlers[handleCount].bitmap);
+    handlers[handleCount].memstart = malloc(n_bytes);
+    handlers[handleCount].bitmap = malloc((pow(2,depth)-1)*sizeof(struct bu_node));
+    initBitmap(depth, handlers[handleCount].bitmap);
+    handlers[handleCount].bu_depth=depth;
   }
   return handleCount++;
 }
@@ -60,7 +65,7 @@ void *memalloc(int handle, long n_bytes){
     void *p;
     if(handlers[handle].flags & 0x1){
         /*call buddy allocator*/
-        p=buddy_allot(handlers, handle, n_bytes);
+        p=buddy_allot(handlers[handle], n_bytes);
     }
     else if(handlers[handle].flags & 0x4){
         /*determine type*/
@@ -105,9 +110,10 @@ void print_fl(struct handle *this_handle, int handle){
     printf("\n");
 }
 
-void print_bu(struct handle *this_handle, int handle){
+void print_bu(struct bu_node *root){
     struct bu_node *walk;
     walk=this_handle->bitmap;
-
+    printf("%d",root->used);
+    while(root->left!=NULL)
     printf("\n");
 }
