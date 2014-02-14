@@ -44,6 +44,7 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
     handlers[handleCount].freelist = malloc(sizeof(struct fl_node));
     handlers[handleCount].freelist->blockstart = handlers[handleCount].memstart;
     handlers[handleCount].freelist->size = n_bytes;
+    handlers[handleCount].freelist->next = NULL;
   }
 
   else if (flags & 0x1){
