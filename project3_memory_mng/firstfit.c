@@ -14,6 +14,8 @@ void *ff_allot(struct handle *handlers, int handleCount, long n_bytes){
       node->size = handlers[handleCount].freelist->size - n_bytes;
       node->used = 0;
       node->blockstart = node + sizeof(struct fl_node); /* the start address of this page's allocatable memory */
+      node->next = NULL;
+
 
       search->used = 1;          /* update old page's info */
       search->size = n_bytes;
