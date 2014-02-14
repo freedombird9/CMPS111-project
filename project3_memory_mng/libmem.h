@@ -12,7 +12,6 @@ struct fl_node{
     int used;
     void *blockstart;
     struct fl_node *next;
-    struct fl_node *next_candidate;
 };
 
 struct bu_node{
