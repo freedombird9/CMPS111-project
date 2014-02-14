@@ -5,7 +5,7 @@
 void *ff_allot(struct handle *handlers, int handleCount, long n_bytes){
   struct fl_node *search = handlers[handleCount].freelist;
 
-  while (handlers[handleCount].freelist != NULL){
+  while (search != NULL){
     struct fl_node *node;
     if (search->size >= n_bytes && !search->used){
       void *memAllocd = handlers[handleCount].freelist->blockstart;
