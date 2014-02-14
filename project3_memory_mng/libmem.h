@@ -1,7 +1,7 @@
 #ifndef _LIBMEM_H_
 #define _LIBMEM_H_
 
-#define MAX_HANDLE 10
+#define MAX_HANDLE 20
 int handleCount = 0;
 
 
@@ -9,17 +9,15 @@ int handleCount = 0;
 
 struct fl_node{
     unsigned long size;
-    void *memstart;
+    void *blockstart;
     struct fl_node* next;
 };
 
 struct bu_node{
-    int handler_b;
-    int min_pg;
-    void *memstart;
-    struct bu_node* next;
+    int used;
+    struct bu_node *left;
+    struct bu_node *right;
 };
-
 
 struct handle{
     unsigned int flags;
@@ -30,7 +28,5 @@ struct handle{
     struct bu_node *bitmap;
 } handlers[MAX_HANDLE];
 
-struct bu_node *head_bu = NULL;
-struct fl_node *head_fl = NULL;
-
 #endif
+
