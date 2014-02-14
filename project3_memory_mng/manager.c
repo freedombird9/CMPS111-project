@@ -13,18 +13,18 @@ int isValid(long number){
   return 0;
 }
 
-void initBitmap(int depth, struct bu_node *root){
-  root->used=0;
-  if(depth==0){
-    root->left=NULL;
-    root->right=NULL;
+void initBitmap(int depth, struct bu_node **root){
+  root->used = 0;
+  if(depth == 0){
+    root->left = NULL;
+    root->right = NULL;
   }
-  while(depth>0){
+  while(depth > 0){
     depth=depth-1;
-    root->left=malloc(sizeof(struct bu_node));
-    root->right=malloc(sizeof(struct bu_node));
-    initBitmap(depth, root->left);
-    initBitmap(depth, root->right);
+    root->left = malloc(sizeof(struct bu_node));
+    root->right = malloc(sizeof(struct bu_node));
+    initBitmap(depth, &root->left);
+    initBitmap(depth, &root->right);
   }
 }
 
@@ -36,21 +36,22 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
   if (power)
     return -1;
   handlers[handleCount].memstart = malloc(n_bytes);
+  handlers[handleCount].freelist = handlers[handleCount].memstart;   /* keep the data structure inside the memory region */
   handlers[handleCount].flags = flags;
   handlers[handleCount].n_bytes = n_bytes;
 
   /* free list allocator */
   if (flags & 0x4) {            /* initiate free list allocator */
-    handlers[handleCount].freelist = malloc(sizeof(struct fl_node));
-    handlers[handleCount].freelist->blockstart = handlers[handleCount].memstart;
-    handlers[handleCount].freelist->size = n_bytes;
+    handlers[handleCount].freelist->blockstart = handlers[handleCount].memstart + sizeof(struct fl_node);
+    handlers[handleCount].freelist->size = n_bytes - sizeof(struct fl_node);
+    handlers[handleCount].freelist->used = 0;		/* not used, allocatable */
     handlers[handleCount].freelist->next = NULL;
   }
 
   else if (flags & 0x1){
     int depth = power - parm1 + 1;
-    handlers[handleCount].bitmap=malloc(sizeof(struct bu_node));
-    initBitmap(depth, handlers[handleCount].bitmap);
+    handlers[handleCount].bitmap = malloc(sizeof(struct bu_node));
+    initBitmap(depth, &handlers[handleCount].bitmap);
   }
   return handleCount++;
 }
@@ -59,7 +60,7 @@ void *memalloc(int handle, long n_bytes){
     void *p;
     if(handlers[handle].flags & 0x1){
         /*call buddy allocator*/
-        p=buddy_allot(handlers[handle], n_bytes);
+        p=buddy_allot(handlers, handle, n_bytes);
     }
     else if(handlers[handle].flags & 0x4){
         /*determine type*/
@@ -91,7 +92,6 @@ void memfree (void *region){
 
 }
 
-/**/
 void print_fl(struct handle *this_handle, int handle){
     struct fl_node *walk;
     walk=this_handle->freelist;
@@ -111,5 +111,3 @@ void print_bu(struct handle *this_handle, int handle){
 
     printf("\n");
 }
-
-
