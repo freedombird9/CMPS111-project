@@ -13,7 +13,7 @@ int isValid(long number){
   return 0;
 }
 
-void initBitmap(int depth, struct bu_node **root){
+void initBitmap(int depth, struct bu_node *root){
   root->used=0;
   if(depth==0){
     root->left=NULL;
@@ -23,8 +23,8 @@ void initBitmap(int depth, struct bu_node **root){
     depth=depth-1;
     root->left=malloc(sizeof(struct bu_node));
     root->right=malloc(sizeof(struct bu_node));
-    initBitmap(depth, &root->left);
-    initBitmap(depth, &root->right);
+    initBitmap(depth, root->left);
+    initBitmap(depth, root->right);
   }
 }
 
@@ -49,7 +49,7 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
   else if (flags & 0x1){
     int depth = power - parm1 + 1;
     handlers[handleCount].bitmap=malloc(sizeof(struct bu_node));
-    initBitmap(depth, &handlers[handleCount].bitmap);
+    initBitmap(depth, handlers[handleCount].bitmap);
   }
   return handleCount++;
 }

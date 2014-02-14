@@ -9,6 +9,7 @@ int handleCount = 0;
 
 struct fl_node{
     unsigned long size;
+    int used;
     void *blockstart;
     struct fl_node* next;
 };
@@ -23,7 +24,7 @@ struct handle{
     unsigned int flags;
     void *memstart;
     long int n_bytes;
-    
+
     struct fl_node *freelist;
     struct bu_node *bitmap;
 } handlers[MAX_HANDLE];
