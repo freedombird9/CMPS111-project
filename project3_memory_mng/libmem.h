@@ -16,6 +16,7 @@ struct fl_node{
 
 struct bu_node{
     int used;
+    char *pointer;
     struct bu_node *parent;
     struct bu_node *left;
     struct bu_node *right;
