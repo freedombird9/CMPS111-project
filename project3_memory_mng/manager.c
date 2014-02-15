@@ -97,7 +97,61 @@ void *memalloc(int handle, long n_bytes){
 }
 
 void memfree (void *region){
-
+  int i;
+  for (i = 0; i != handleCount; i++){   /* search for the right handler */
+    if (handlers[i].flag & 0x4) {
+      if ((char*) region >= handlers[i].memstart && (char*) region <= handlers[i].memstart + handlers[i].n_bytes){    /* if find the right handler */
+	struct fl_node *search = handlers[i].freelist;
+	struct fl_node *after = search->next;
+	struct fl_node *pre = search;
+	while (search != NULL){
+	  if ((char*) region == search->blockstart){
+	    handlers[i].numNodes++;
+	    if (search == handlers[i].freelist){     /* if the node to be freed is the first node */
+	      if ( after->used == 0){     /* if the next node is also free, merge the two */
+		search->used = 0;
+		search->size = search->size + sizeof(struct fl_node) + after->size;
+		search->next = after->next;
+		after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */	       
+	      }
+	      else search->used = 0;	      
+	    }
+	    if (search->next == NULL){     /* if the node to be freed is the last node */
+	      if (pre->used == 0){     /* if its previous node is also free, merge them */
+		pre->size = pre->size + sizeof(struct fl_node) + search->size;
+		pre->next = NULL;
+		search->used = 0; search->blockstart = 0; search->size = 0; search->next = 0;   /* clean the node freed */
+	      }
+	      else search->used = 0;
+	    }
+	    else{         /* if the node to be freed is in between */
+	      if (pre->used == 0){     /* if the previous one is also free, merge them */
+		if (after->used == 0){      /* if the nodes before and after are both free */
+		  pre->size = pre->size + 2*sizeof(struct fl_node) + search->size + after->size;
+		  pre->next = after->next;
+		  after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */
+		  search->used = 0; search->blockstart = 0; search->size = 0; search->next = 0;   /* clean the node freed */
+		}
+		else{       /* if only the previous node is free */
+		  pre->size = pre->size + sizeof(struct fl_node) + search->size;
+		  pre->next = search->next;
+		  search->used = 0; search->blockstart = 0; search->size = 0; search->next = 0;   /* clean the node freed */
+		}
+	      }
+	      if (after->used == 0 && pre->used != 0){     /* if the next node is also free */
+		search->size = search->size + sizeof(struct fl_node) + after->size;
+		search->next = after->next;
+		after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */
+	      }
+	    }
+	    else search->used = 0;  /* only the current node is free */
+	  }	  
+	  pre = search;
+	  search = search->next;
+	}   /* end while */
+      }   /* end handler search */
+    }   /* end case for freelist */
+  }
 }
 
 void print_fl(struct handle *this_handle, int handle){
