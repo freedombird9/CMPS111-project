@@ -39,17 +39,19 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
   int power = isValid(n_bytes);
   if (power)
     return -1;
-  handlers[handleCount].freelist = handlers[handleCount].memstart;   /* keep the data structure inside the memory region */
+  handlers[handleCount].memstart = malloc(n_bytes);
   handlers[handleCount].flags = flags;
   handlers[handleCount].n_bytes = n_bytes;
 
   /* free list allocator */
   if (flags & 0x4) {            /* initiate free list allocator */
-    handlers[handleCount].memstart = malloc(n_bytes);
+    handlers[handleCount].freelist = handlers[handleCount].memstart;   /* keep the data structure inside the memory region */
     handlers[handleCount].freelist->blockstart = handlers[handleCount].memstart + sizeof(struct fl_node);
     handlers[handleCount].freelist->size = n_bytes - sizeof(struct fl_node);
     handlers[handleCount].freelist->used = 0;		/* not used, allocatable */
     handlers[handleCount].freelist->next = NULL;
+    handlers[handleCount].visited = freelist;
+    handlers[handleCount].numNodes = 1;     /* we got one node with free memory after initiation */
   }
 
   else if (flags & 0x1){
@@ -63,35 +65,35 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
 }
 
 void *memalloc(int handle, long n_bytes){
-    void *p;
-    if(handlers[handle].flags & 0x1){
+      void *p;
+      if(handlers[handle].flags & 0x1){
         /*call buddy allocator*/
         p=buddy_allot(handlers[handle], n_bytes);
-    }
-    else if(handlers[handle].flags & 0x4){
+      }
+      else if(handlers[handle].flags & 0x4){
         /*determine type*/
         if(handlers[handle].flags == (0x0 | 0x4)){
-            /*call first fit*/
-            p=ff_allot(handlers[handle], n_bytes);
-        }
-        if(handlers[handle].flags == (0x8 | 0x4)){
-            /*call next fit*/
-            p=nf_allot(handlers[handle], n_bytes);
-        }
-        if(handlers[handle].flags == (0x10 | 0x4)){
-            /*call best fit*/
-            p=bf_allot(handlers[handle], n_bytes);
-        }
-        if(handlers[handle].flags == (0x20 | 0x4)){
-            /*call worst fit*/
-            p=wf_allot(handlers[handle], n_bytes);
-        }
-        if(handlers[handle].flags == (0x40 | 0x4)){
-            /*call random fit*/
-            p=rf_allot(handlers[handle], n_bytes);
-        }
-    }
-    return p;
+           /*call first fit*/
+        p=ff_allot(handlers, handle, n_bytes);
+      }
+      if(handlers[handle].flags == (0x8 | 0x4)){
+      /*call next fit*/
+        p=nf_allot(handlers, handle, n_bytes);
+      }
+      if(handlers[handle].flags == (0x10 | 0x4)){
+      /*call best fit*/
+        p=bf_allot(handlers, handle, n_bytes);
+      }
+      if(handlers[handle].flags == (0x20 | 0x4)){
+        /*call worst fit*/
+        p=wf_allot(handlers, handle, n_bytes);
+      }
+      if(handlers[handle].flags == (0x40 | 0x4)){
+        /*call random fit*/
+        p=rf_allot(handlers, handle, n_bytes);
+          }
+      }
+      return p;
 }
 
 void memfree (void *region){
