@@ -26,8 +26,10 @@ struct handle{
     unsigned int flags;
     void *memstart;
     long int n_bytes;
+    int numNodes;      /* track the number of nodes that have unallocated memory */
 
     struct fl_node *freelist;
+    struct fl_node *visited    /* store the previously visited node ,used for next fit */
     struct bu_node *bitmap;
     int bu_depth;
     int page_size;
