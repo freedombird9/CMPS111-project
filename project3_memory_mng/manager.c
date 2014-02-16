@@ -32,6 +32,22 @@ void initBitmap(int depth, struct bu_node *head, char *memstart, long int n_byte
                     j=j+1;
         }
     }
+    
+    
+void print_fl(struct handle *this_handle, int handle){
+    struct fl_node *walk;
+    walk=this_handle[handle].freelist;
+    printf("The allocation in handle %d\n",handle);
+    while(walk!=NULL){
+        if(walk->used==1)
+            printf("used %ld bytes + ",walk->size);     /*not sure about the format, so compare*/
+        if(walk->used==0)
+            printf("unused %lu bytes + ",walk->size);   /*and check*/
+        walk = walk->next;
+    }
+    printf("\n");
+}
+    
 
     /*
     root->used = 0;
@@ -133,6 +149,10 @@ void memfree (void *region){
 		search->size = search->size + sizeof(struct fl_node) + after->size;
 		search->next = after->next;
 		after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */
+#ifdef _DEBUG_
+		printf("after freeing the first node:\n");
+		print_fl(handlers,i);
+#endif
 		return;
 	      }
 	      else {search->used = 0; return; }	      
@@ -142,10 +162,18 @@ void memfree (void *region){
 		pre->size = pre->size + sizeof(struct fl_node) + search->size;
 		pre->next = NULL;
 		search->used = 0; search->blockstart = 0; search->size = 0; search->next = 0;   /* clean the node freed */
+#ifdef _DEBUG_
+		printf("after freeing the last node:\n");
+		print_fl(handlers,i);
+#endif
 		return;
 	      }
 	      else {
 	        search->used = 0;
+#ifdef _DEBUG_
+		printf("after freeing the last node:\n");
+		print_fl(handlers,i);
+#endif
 	        return;
 	      }
 	    }
@@ -156,22 +184,41 @@ void memfree (void *region){
 		  pre->next = after->next;
 		  after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */
 		  search->used = 0; search->blockstart = 0; search->size = 0; search->next = 0;   /* clean the node freed */
+#ifdef _DEBUG_
+		  printf("after freeing the middle node:\n");
+		  print_fl(handlers,i);
+#endif
 		  return;
 		}
 		else{       /* if only the previous node is free */
 		  pre->size = pre->size + sizeof(struct fl_node) + search->size;
 		  pre->next = search->next;
 		  search->used = 0; search->blockstart = 0; search->size = 0; search->next = 0;   /* clean the node freed */
+#ifdef _DEBUG_
+		  printf("after freeing the middle node:\n");
+		  print_fl(handlers,i);
+#endif
 		  return;
 		}
 	      }
-	     else if (after->used == 0){     /* if the next node is also free */
+	      else if (after->used == 0){     /* if the next node is also free */
 		search->size = search->size + sizeof(struct fl_node) + after->size;
 		search->next = after->next;
 		after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */
+#ifdef _DEBUG_
+		printf("after freeing the middle node:\n");
+		print_fl(handlers,i);
+#endif
 		return;
 	      }
-	     else {search->used = 0; return;}  /* only the current node is free */
+	      else {
+		search->used = 0;
+#ifdef _DEBUG_
+		printf("after freeing the middle node:\n");
+		print_fl(handlers,i);
+#endif
+		return;
+	      }  /* only the current node is free */
 	    }
 	  }	  
 	  pre = search;
@@ -181,20 +228,6 @@ void memfree (void *region){
       }   /* end handler search */
     }   /* end case for freelist */
   }
-}
-
-void print_fl(struct handle *this_handle, int handle){
-    struct fl_node *walk;
-    walk=this_handle[handle].freelist;
-    printf("The allocation in handle %d\n",handle);
-    while(walk!=NULL){
-        if(walk->used==1)
-            printf("used %ld bytes + ",walk->size);     /*not sure about the format, so compare*/
-        if(walk->used==0)
-            printf("unused %lu bytes + ",walk->size);   /*and check*/
-        walk = walk->next;
-    }
-    printf("\n");
 }
 
 void print_bu(struct bu_node *head,int depth){
