@@ -72,6 +72,7 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
     handlers[handleCount].freelist->next = NULL;
     handlers[handleCount].visited = handlers[handleCount].freelist;
     handlers[handleCount].numNodes = 1;     /* we got one node with free memory after initiation */
+    /*pri*/
   }
 
   else if (flags & 0x1){
@@ -112,6 +113,7 @@ void *memalloc(int handle, long n_bytes){
         /*call random fit*/
         p=rf_allot(handlers, handle, n_bytes);
           }
+
       }
       return p;
 }
@@ -135,7 +137,7 @@ void memfree (void *region){
 		after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */
 		return;
 	      }
-	      else {search->used = 0; return; }	      
+	      else {search->used = 0; return; }
 	    }
 	    else if (search->next == NULL){     /* if the node to be freed is the last node */
 	      if (pre->used == 0){     /* if its previous node is also free, merge them */
@@ -173,7 +175,7 @@ void memfree (void *region){
 	      }
 	     else {search->used = 0; return;}  /* only the current node is free */
 	    }
-	  }	  
+	  }
 	  pre = search;
 	  search = after;
 	  after = after->next;

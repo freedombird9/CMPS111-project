@@ -25,7 +25,7 @@ struct handle{
     int numNodes;      /* track the number of nodes that have unallocated memory */
 
     struct fl_node *freelist;
-    struct fl_node *visited    /* store the previously visited node ,used for next fit */
+    struct fl_node *visited;    /* store the previously visited node ,used for next fit */
     struct bu_node *bm_head;
     int bu_depth;
     int page_size;
