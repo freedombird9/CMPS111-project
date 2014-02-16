@@ -21,7 +21,7 @@ void initBitmap(int depth, struct bu_node *head, char *memstart, long int n_byte
     int i , j=0,level_count=0;
     for(i=0;i<length;i++){
         if(i==pow(2,j)){
-            bitmap[i].pointer=memstart;
+            head[i].pointer=memstart;
             continue;
         }
         else{
@@ -30,8 +30,8 @@ void initBitmap(int depth, struct bu_node *head, char *memstart, long int n_byte
             if(level_count==(int)(pow(2,j)-pow(2,j-1)))
                     j=j+1;
         }
-
     }
+
     /*
     root->used = 0;
   if(depth == 0){
@@ -69,15 +69,15 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
     handlers[handleCount].freelist->size = n_bytes - sizeof(struct fl_node);
     handlers[handleCount].freelist->used = 0;		/* not used, allocatable */
     handlers[handleCount].freelist->next = NULL;
-    handlers[handleCount].visited = freelist;
+    handlers[handleCount].visited = handlers[handleCount].freelist;
     handlers[handleCount].numNodes = 1;     /* we got one node with free memory after initiation */
   }
 
   else if (flags & 0x1){
     int depth = power - parm1 + 1;
     handlers[handleCount].memstart = malloc(n_bytes);
-    handlers[handleCount].bitmap = malloc((pow(2,depth)-1)*sizeof(struct bu_node));
-    initBitmap(depth, handlers[handleCount].bitmap,handlers[handleCount].memstart,n_bytes);
+    handlers[handleCount].bm_head = malloc((pow(2,depth)-1)*sizeof(struct bu_node));
+    initBitmap(depth, handlers[handleCount].bm_head,handlers[handleCount].memstart,n_bytes);
     handlers[handleCount].bu_depth=depth;
   }
   return handleCount++;

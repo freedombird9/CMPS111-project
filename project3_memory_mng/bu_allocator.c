@@ -1,55 +1,79 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "libmem.h"
 
-
-void modBitmap(int depth, struct bu_node *root, int used_val);
+/*type 1 for change all its child to 1, 0 for change all children to 0 and 2 for only change one branch to 1*/
+void modBitmap(int depth, struct bu_node *head,int index, int type);
 
 
 void *buddy_allot(struct handle *this_handle, unsigned long alot_bytes){
-    int level;      /*the max possible depth of the allocated block*/
-    struct bu_node *walk;
-    int flag_found=0; /**/
-    /*allot the whole struct*/
-    if(alot_bytes==this_handle->n_bytes){
-        modBitmap(this_handle->bu_depth, this_handle->bitmap, 1);
-        return this_handle->memstart;
-    }
-    /*the allocated part is small than the whole part*/
-    /*compute the level*/
-    if((alot_bytes % this_handle->page_size)==0)
+    int min_pg=this_handle->page_size;
+    int level, current_level, length;
+    int begin;
+    int i;
+    if(alot_bytes%min_pg==0)
         level=this_handle->bu_depth-(alot_bytes/this_handle->page_size)/2;
     else
         level=this_handle->bu_depth-(alot_bytes/this_handle->page_size+1)/2;
-    /*traversal the tree to find the fit block*/
-    walk=this_handle->bitmap;
-    while(level>0){
-        if(walk->used==1){
-            if(level>2){
-                walk=walk->left;
-                level=level-1;
-                continue;
+
+    if(alot_bytes==this_handle->n_bytes){
+        if(this_handle->bm_head[1]==0){
+            modBitmap(0,this_handle->bm_head,1);
+            return this_handle->memstart;
+        }
+        else
+            printf("no much space to allocate\n");
+    }
+
+    if(alot_bytes<this_handle->n_bytes){
+        length=(int)pow(2,level)-pow(2,level-1);
+        begin=pow(2,level);
+        for (i=0;i<length;i=i+2){
+            if((this_handle->bm_head[begin+i]==0)(this_handle->bm_head[(begin+1)/2]==1))
+                /*this_handle->bm_head[begin+i]=1;*/
+                modBitmap(this_handle->bu_depth-level,this_handle->bm_head,begin+i,1);
+                return this_handle->bm_head[begin+i]->pointer;
             }
-            /*the block that the body is allocated but is is not*/
-            if(level==2){
-                if(((walk->left->used==0)&&(walk->right->used==1))||((walk->left->used==0)&&(walk->right->used==1))){
-                    walk->right->used=1;
-                    flag_found=1;
-                    return walk->right->pointer;
+        current_level=level-1;
+        while(current_level>0){
+            begin=pow(2,current_level);
+            length=(int)pow(2,current_level)-pow(2,current_level-1);
+            for (i=0;i<length;i=i+2){
+                if((this_handle->bm_head[begin+i]==0)(this_handle->bm_head[(begin+1)/2]==1)){
+                    /*this_handle->bm_head[begin+i]=1;*/
+                    modBitmap(this_handle->bu_depth-current_level, this_handle->bm_head,begin+i, 2);
+                   /* this_handle->bm_head[(begin+i)*2]==1;
+                    this_handle->bm_head[(begin+i)*2+1]==0;*/
+                    return this_handle->bm_head[(begin+1)*(level-current_level)*2]->pointer;
                 }
             }
-
-        }
-                        level=level-1;
         }
 
+    }
 }
 
-void modBitmap(int depth, struct bu_node *root, int used_val){
-  root->used = used_val;
-  while(depth > 0){
-    depth=depth-1;
-    modBitmap(depth, root->left,used_val);
-    modBitmap(depth, root->right,used_val);
-  }
+void modBitmap(int depth, struct bu_node *head, int index, int type){
+    if(type==1){
+        head[index].used=1;
+        if(depth>0){
+            modBitmap(depth-1, head, index*2, 1);
+            modBitmap(depth-1, head, index*2+1, 1);
+        }
+    }
+    if(type==0){
+        head[index].used=0;
+        if(depth>0){
+            modBitmap(depth-1, head, index*2, 0);
+            modBitmap(depth-1, head, index*2+1, 0);
+        }
+    }
+    if(type==2){
+        head[index].used=1;
+        if(depth>0){
+            modBitmap(depth-1, head, index*2, 1);
+            modBitmap(depth-1, head, index*2+1, 0);
+        }
+    }
 }
+
