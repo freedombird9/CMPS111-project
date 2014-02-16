@@ -1,7 +1,7 @@
 #ifndef _LIBMEM_H_
 #define _LIBMEM_H_
 
-#define MAX_HANDLE 20
+#define MAX_HANDLE 64
 
 
 /*store the handlers for free list and buddy allocator*/
