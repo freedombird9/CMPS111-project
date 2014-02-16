@@ -15,7 +15,7 @@ int isValid(long number){
 }
 
 void initBitmap(int depth, struct bu_node *head, char *memstart, long int n_bytes){
-    int length=(int)(pow(2,depth)-1)*sizeof(struct bu_node);
+    int length=(int)(pow(2,depth)-1);
     struct bu_node bitmap[length];
     head=bitmap;
     int i , j=0,level_count=0;
@@ -186,10 +186,20 @@ void print_fl(struct handle *this_handle, int handle){
     printf("\n");
 }
 
-void print_bu(struct bu_node *root){
-    struct bu_node *walk;
-    walk=this_handle->bitmap;
-    printf("%d",root->used);
-    while(root->left!=NULL)
-    printf("\n");
+void print_bu(struct bu_node *head,int depth){
+    int length=(int)(pow(2,depth)-1);
+    struct bu_node bitmap[length];
+    int i , j=0,level_count=0;
+    for(i=0;i<length;i++){
+        if(i==pow(2,j)){
+            printf("%d \n",head[i].used);
+            continue;
+        }
+        else{
+            printf("%d ",head[i].used);
+            level_count=level_count+1;
+            if(level_count==(int)(pow(2,j)-pow(2,j-1)))
+            j=j+1;
+        }
+    }
 }
