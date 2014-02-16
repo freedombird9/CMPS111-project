@@ -14,7 +14,7 @@ struct fl_node{
 };
 
 struct bu_node{
-    int used;
+    unsigned int used;
     char *pointer;
 };
 
@@ -38,4 +38,3 @@ void *wf_allot(struct handle *handlers, int handleCount, long n_bytes);
 void *rf_allot(struct handle *handlers, int handleCount, long n_bytes);
 
 #endif
-

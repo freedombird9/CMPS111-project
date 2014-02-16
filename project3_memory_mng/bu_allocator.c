@@ -5,6 +5,7 @@
 
 /*type 1 for change all its child to 1, 0 for change all children to 0 and 2 for only change one branch to 1*/
 void modBitmap(int depth, struct bu_node *head,int index, int type);
+void bu_free(struct handle *this_handle, unsigned long free_bytes);
 
 
 void *buddy_allot(struct handle *this_handle, unsigned long alot_bytes){
@@ -29,6 +30,7 @@ void *buddy_allot(struct handle *this_handle, unsigned long alot_bytes){
     if(alot_bytes<this_handle->n_bytes){
         length=(int)pow(2,level)-pow(2,level-1);
         begin=pow(2,level);
+        /*the */
         for (i=0;i<length;i=i+2){
             if((this_handle->bm_head[begin+i].used==0)&&(this_handle->bm_head[(begin+1)/2].used==1))
                 /*this_handle->bm_head[begin+i]=1;*/
@@ -49,8 +51,10 @@ void *buddy_allot(struct handle *this_handle, unsigned long alot_bytes){
                 }
             }
         }
-
     }
+    printf("don't have much space to allocate\n");
+    i=-1;
+    return this_handle->memstart-1;
 }
 
 void modBitmap(int depth, struct bu_node *head, int index, int type){
@@ -77,3 +81,16 @@ void modBitmap(int depth, struct bu_node *head, int index, int type){
     }
 }
 
+
+/*
+void bu_free(struct handle *this_handle, unsigned long free_bytes){
+    int min_pg=this_handle->page_size;
+    int level, current_level, length;
+    int begin;
+    int i;
+
+    if(free_bytes)
+
+
+}
+*/
