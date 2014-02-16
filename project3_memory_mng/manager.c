@@ -185,13 +185,14 @@ void memfree (void *region){
 
 void print_fl(struct handle *this_handle, int handle){
     struct fl_node *walk;
-    walk=this_handle->freelist;
+    walk=this_handle[handle].freelist;
     printf("The allocation in handle %d\n",handle);
     while(walk!=NULL){
         if(walk->used==1)
             printf("used %ld bytes + ",walk->size);     /*not sure about the format, so compare*/
         if(walk->used==0)
             printf("unused %lu bytes + ",walk->size);   /*and check*/
+        walk = walk->next;
     }
     printf("\n");
 }
