@@ -14,8 +14,26 @@ int isValid(long number){
   return 0;
 }
 
-void initBitmap(int depth, struct bu_node *root, char *memstart, long int n_bytes){
-  root->used = 0;
+void initBitmap(int depth, struct bu_node *head, char *memstart, long int n_bytes){
+    int length=(int)(pow(2,depth)-1)*sizeof(struct bu_node);
+    struct bu_node bitmap[length];
+    head=bitmap;
+    int i , j=0,level_count=0;
+    for(i=0;i<length;i++){
+        if(i==pow(2,j)){
+            bitmap[i].pointer=memstart;
+            continue;
+        }
+        else{
+            bitmap[i].pointer=memstart+n_bytes*((int)(i-pow(2,j-1))/(int)pow(2,j));
+            level_count=level_count+1;
+            if(level_count==(int)(pow(2,j)-pow(2,j-1)))
+                    j=j+1;
+        }
+
+    }
+    /*
+    root->used = 0;
   if(depth == 0){
     root->left = NULL;
     root->right = NULL;
@@ -31,6 +49,7 @@ void initBitmap(int depth, struct bu_node *root, char *memstart, long int n_byte
     initBitmap(depth, root->left, memstart, n_bytes/2);
     initBitmap(depth, root->right,memstart+n_bytes/2,n_bytes/2);
   }
+  */
 }
 
 
@@ -99,7 +118,7 @@ void *memalloc(int handle, long n_bytes){
 void memfree (void *region){
   int i;
   for (i = 0; i != handleCount; i++){   /* search for the right handler */
-    if (handlers[i].flag & 0x4) {
+    if (handlers[i].flags & 0x4) {
       if ((char*) region >= handlers[i].memstart && (char*) region <= handlers[i].memstart + handlers[i].n_bytes){    /* if find the right handler */
 	struct fl_node *search = handlers[i].freelist;
 	struct fl_node *after = search->next;
@@ -112,9 +131,9 @@ void memfree (void *region){
 		search->used = 0;
 		search->size = search->size + sizeof(struct fl_node) + after->size;
 		search->next = after->next;
-		after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */	       
+		after->used = 0; after->blockstart = 0; after->size = 0; after->next = 0;   /* clean the node freed */
 	      }
-	      else search->used = 0;	      
+	      else search->used = 0;
 	    }
 	    if (search->next == NULL){     /* if the node to be freed is the last node */
 	      if (pre->used == 0){     /* if its previous node is also free, merge them */
@@ -145,7 +164,7 @@ void memfree (void *region){
 	      }
 	    }
 	    else search->used = 0;  /* only the current node is free */
-	  }	  
+	  }
 	  pre = search;
 	  search = search->next;
 	}   /* end while */

@@ -17,9 +17,6 @@ struct fl_node{
 struct bu_node{
     int used;
     char *pointer;
-    struct bu_node *parent;
-    struct bu_node *left;
-    struct bu_node *right;
 };
 
 struct handle{
@@ -30,7 +27,7 @@ struct handle{
 
     struct fl_node *freelist;
     struct fl_node *visited    /* store the previously visited node ,used for next fit */
-    struct bu_node *bitmap;
+    struct bu_node *bm_head;
     int bu_depth;
     int page_size;
 } handlers[MAX_HANDLE];

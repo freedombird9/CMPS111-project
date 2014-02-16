@@ -32,19 +32,16 @@ void *buddy_allot(struct handle *this_handle, unsigned long alot_bytes){
             }
             /*the block that the body is allocated but is is not*/
             if(level==2){
-                if((walk->left->used==1)&&(walk->right->used==0)){
+                if(((walk->left->used==0)&&(walk->right->used==1))||((walk->left->used==0)&&(walk->right->used==1))){
                     walk->right->used=1;
                     flag_found=1;
                     return walk->right->pointer;
                 }
             }
+
         }
                         level=level-1;
         }
-
-
-    }
-
 
 }
 
