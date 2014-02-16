@@ -14,7 +14,7 @@ struct fl_node{
 };
 
 struct bu_node{
-    int used;
+    unsigned int used;
     char *pointer;
 };
 
