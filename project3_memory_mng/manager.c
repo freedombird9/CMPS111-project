@@ -47,8 +47,6 @@ void print_fl(struct handle *this_handle, int handle){
     }
     printf("\n");
 }
-
-
     /*
     root->used = 0;
   if(depth == 0){
