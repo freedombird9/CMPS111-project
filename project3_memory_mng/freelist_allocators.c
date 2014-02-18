@@ -3,6 +3,7 @@
 #include <time.h>
 #include "libmem.h"
 
+/* #define _DEBUG_  */
 
 /* first fit allocator */
 void *ff_allot(struct handle *handlers, int handleNum, long n_bytes){
@@ -13,10 +14,10 @@ void *ff_allot(struct handle *handlers, int handleNum, long n_bytes){
     if (search->size > n_bytes && !search->used){
       char *memAllocd = search->blockstart;
       
-      if (search->size < n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
-	search->used = 1;                                    /* just allocate all the available memory */
-	(handlers[handleNum].numNodes)--;    /* one free node used */
-	return (void*) memAllocd;
+      if (search->size <= n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
+	      search->used = 1;                                    /* just allocate all the available memory */
+	      (handlers[handleNum].numNodes)--;    /* one free node used */
+	      return (void*) memAllocd;
       }
       node = search->blockstart + n_bytes;  /* start address of the next node */
       node->size = search->size - n_bytes - sizeof(struct fl_node);
@@ -41,22 +42,26 @@ void *ff_allot(struct handle *handlers, int handleNum, long n_bytes){
     }
     search = search->next;
   }
+  printf("memalloc failed, not enough memory\n");
   return NULL;
 }
 
 /* next fit allocator */
 void *nf_allot(struct handle *handlers, int handleNum, long n_bytes){    
   struct fl_node *search = handlers[handleNum].visited;
-  search = search->next;       /* start searching from the next node */
+  if (search->next != NULL)  /* if the last visited node is not the last node */
+    search = search->next;       /* start searching from the next node */
+  else search = handlers[handleNum].freelist;  /* otherwise, start searching from the beginning  */
   while (search != NULL){
     struct fl_node *node;
     if (search->size > n_bytes && !search->used){
       char *memAllocd = search->blockstart;
 
-      if (search->size < n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
-	search->used = 1;                                    /* just allocate all the available memory */
-	(handlers[handleNum].numNodes)--;    /* one free node used */
-	return (void*) memAllocd;
+      if (search->size <= n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
+	      search->used = 1;                                    /* just allocate all the available memory */
+	      handlers[handleNum].visited = search;
+	      (handlers[handleNum].numNodes)--;    /* one free node used */
+	      return (void*) memAllocd;
       }
       
       node = search->blockstart + n_bytes;  /* start address of the next node */
@@ -69,7 +74,7 @@ void *nf_allot(struct handle *handlers, int handleNum, long n_bytes){
       search->size = n_bytes;
       search->next = node;
 
-      handlers[handleNum].visited = search;
+      handlers[handleNum].visited = node;  /* keep the visited information */
 
       return (void*) memAllocd;
     }
@@ -81,12 +86,13 @@ void *nf_allot(struct handle *handlers, int handleNum, long n_bytes){
       search->size = n_bytes;
       (handlers[handleNum].numNodes)--;    /* one free node used */
 
-      handlers[handleNum].visited = search;
+      handlers[handleNum].visited = node;
       
       return (void*) memAllocd;
    }
     search = search ->next;
   }
+  printf("memalloc failed, not enough memory\n");
   return NULL;
 }
 
@@ -105,8 +111,10 @@ void *bf_allot(struct handle *handlers, int handleNum, long n_bytes){
      }
      search = search->next;
    }
-   if (!findBest)
-     return NULL;
+  if (!findBest){
+    printf("memalloc failed, not enough memory\n");
+    return NULL;
+  }
 
    search = handlers[handleNum].freelist;
    
@@ -121,7 +129,7 @@ void *bf_allot(struct handle *handlers, int handleNum, long n_bytes){
    if (best->size > n_bytes && !best->used){
      char *memAllocd = best->blockstart;
      
-     if (best->size < n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
+     if (best->size <= n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
        best->used = 1;                                    /* just allocate all the available memory */
        (handlers[handleNum].numNodes)--;    /* one free node used */
        return (void*) memAllocd;
@@ -148,7 +156,7 @@ void *bf_allot(struct handle *handlers, int handleNum, long n_bytes){
      
      return (void*) memAllocd;
    }
-   
+   printf("memalloc failed, not enough memory\n");
    return NULL;   
 }
 
@@ -168,9 +176,11 @@ void *wf_allot(struct handle *handlers, int handleNum, long n_bytes){
     }
     search = search->next;
   }
-  if (!findWorst)
+  if (!findWorst){
+    printf("memalloc failed, not enough memory\n");
     return NULL;
-  
+  }
+     
   search = handlers[handleNum].freelist;
   
   while (search != NULL){
@@ -184,7 +194,7 @@ void *wf_allot(struct handle *handlers, int handleNum, long n_bytes){
   if (worst->size > n_bytes && !worst->used){
     char *memAllocd = worst->blockstart;
     
-    if (worst->size < n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
+    if (worst->size <= n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
       worst->used = 1;                                    /* just allocate all the available memory */
       (handlers[handleNum].numNodes)--;    /* one free node used */
       return (void*) memAllocd;
@@ -211,29 +221,44 @@ void *wf_allot(struct handle *handlers, int handleNum, long n_bytes){
      
      return (void*) memAllocd;
    }
-   
+   printf("memalloc failed, not enough memory\n");
    return NULL;   
 }
 
 /* random fit allocator */
 
 void *rf_allot(struct handle *handlers, int handleNum, long n_bytes){
-  srand(time(NULL));      /* seed the random number generator */
+  /* srand(time(NULL));       seed the random number generator  */ 
   struct fl_node *search = handlers[handleNum].freelist;
-  unsigned int lucky_num = rand() % handlers[handleNum].numNodes;  /* use a lucky number to choose the nodes */
+  int lucky_num = rand() % handlers[handleNum].numNodes;  /* use a lucky number to choose the nodes */
+
+#ifdef _DEBUG_
+  printf("lucky number: %d\n", lucky_num);
+#endif
   
   while (search != NULL){
     struct fl_node *node;
     
-    if (search->size >= n_bytes && !search->used)
+    if (search->size >= n_bytes && !search->used){
       lucky_num--;
+      
+#ifdef _DEBUG_
+      printf("lucky number: %d\n", lucky_num);
+#endif
+    }
+    
     if (search->size > n_bytes && !search->used && lucky_num < 0){
+      
+#ifdef _DEBUG_
+      printf("elligible node found\n");
+#endif
+      
       char *memAllocd = search->blockstart;
       
-      if (search->size < n_bytes + sizeof(struct fl_node)){  /* if there's no room for the new overhead after allocating n_bytes */
-	search->used = 1;                                    /* just allocate all the available memory */
-	(handlers[handleNum].numNodes)--;    /* one free node used */
-	return (void*) memAllocd;
+      if (search->size <= n_bytes + sizeof(struct fl_node)){  /* if there's no room for the overhead after allocating n_bytes */
+	      search->used = 1;                                    /* just allocate all the available memory */
+	      (handlers[handleNum].numNodes)--;    /* one free node used */
+	      return (void*) memAllocd;
       }
       
       node = search->blockstart + n_bytes;  /* start address of the next node */
@@ -259,5 +284,6 @@ void *rf_allot(struct handle *handlers, int handleNum, long n_bytes){
     }
     search = search->next;
   }
+  printf("memalloc failed, not enough memory\n");
   return NULL;
 }

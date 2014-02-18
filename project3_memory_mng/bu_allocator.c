@@ -1,19 +1,21 @@
+#define _POSIX_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "libmem.h"
 
-/*type 1 for change all its child to 1, 0 for change all children to 0 and 2 for only change one branch to 1*/
-void modBitmap(int depth, struct bu_node *head,int index, int type);
 
-int bu_free(struct handle this_handle, void *free_bytes);
-
-int comp_pow(int num);
+int power(int num);
+int find_buddy(int num);
 int find_parents(int num);
-int find_gradchi(int num, int level);
+int comp_pow(int num);
+
+
+void modBitmap(int depth, struct bu_node *head, int index, int type);
+
 
 void *buddy_allot(struct handle *handlers, int handleCount, unsigned long alot_bytes){
-    int min_pg=pow(2,handlers[handleCount].page_size);
+    int min_pg=power(handlers[handleCount].page_size);
     int level, current_level, length;
     int begin;
     int i;
@@ -43,8 +45,8 @@ void *buddy_allot(struct handle *handlers, int handleCount, unsigned long alot_b
 
     /*general cases*/
     if(alot_bytes<handlers[handleCount].n_bytes){
-        length=(int)(pow(2,level-1));
-        begin=pow(2,level-2)+1;
+        length=(int)(power(level-1));
+        begin=power(level-2)+1;
         /*the */
         for (i=0;i<length;i=i+1){
             if((handlers[handleCount].bm_head[begin+i].used==0)&&(handlers[handleCount].bm_head[find_parents(begin+i)].used==1)){
@@ -58,15 +60,15 @@ void *buddy_allot(struct handle *handlers, int handleCount, unsigned long alot_b
         }
         current_level=level-1;
         while(current_level>0){
-            begin=pow(2,current_level-2);
+            begin=power(current_level-2);
             length=(int)(pow(2,current_level-1));
             printf("%d,%d,%d\n",current_level, begin,length);
             for (i=0;i<length;i=i+1){
-                if((handlers[handleCount].bm_head[(int)pow(2,current_level-1)-2+begin+i].used==0)&&(handlers[handleCount].bm_head[find_parents(pow(2,current_level-1)-2+begin+i)].used==1)){
+                if((handlers[handleCount].bm_head[(int)power(current_level-1)-2+begin+i].used==0)&&(handlers[handleCount].bm_head[find_parents(power(current_level-1)-2+begin+i)].used==1)){
                     printf("at %d found %d\n",current_level,begin+i);
-                    modBitmap(handlers[handleCount].bu_depth-current_level, handlers[handleCount].bm_head,pow(2,current_level-1)-2+begin+i, 2);
-                    modBitmap(handlers[handleCount].bu_depth-current_level,handlers[handleCount].bm_head,find_gradchi((pow(2,current_level-1)-2+begin+i),level-current_level),1);
-                    /*printf("%d\n",find_gradchi((pow(2,current_level-1)-2+begin+i),level-current_level));*/
+                    modBitmap(handlers[handleCount].bu_depth-current_level, handlers[handleCount].bm_head,power(current_level-1)-2+begin+i, 2);
+                    modBitmap(handlers[handleCount].bu_depth-current_level,handlers[handleCount].bm_head,find_gradchi((power(current_level-1)-2+begin+i),level-current_level),1);
+                    /*printf("%d\n",find_gradchi((power(current_level-1)-2+begin+i),level-current_level));*/
                     return (void*) handlers[handleCount].bm_head[(begin+1)*(level-current_level)*2].pointer;
                 }
             }
@@ -76,10 +78,10 @@ void *buddy_allot(struct handle *handlers, int handleCount, unsigned long alot_b
             printf("on root\n");
             /*printf("%p\n",handlers[handleCount].bm_head[2].pointer);*/
             modBitmap(handlers[handleCount].bu_depth, handlers[handleCount].bm_head, 0, 2);
-            modBitmap(handlers[handleCount].bu_depth-level, handlers[handleCount].bm_head, (int)pow(2,level-1)-1, 1);
+            modBitmap(handlers[handleCount].bu_depth-level, handlers[handleCount].bm_head, (int)power(level-1)-1, 1);
             /*printf("%d ",(int)pow(2,level-1)-1);*/
             /*printf("return %p \n", handlers[handleCount].bm_head[(int)pow(2,level-2)+1].pointer);*/
-            return (void*) handlers[handleCount].bm_head[(int)pow(2,level-2)+1].pointer;
+            return (void*) handlers[handleCount].bm_head[(int)power(level-2)+1].pointer;
         }
     }
     printf("don't have much space to allocate\n");
@@ -160,9 +162,18 @@ int find_buddy(int num){
 
 }
 
+int power(int num){
+    int i,result=1;
+    for (i=0;i<num;i++){
+        result=result*2;
+    }
+    return result;
+
+
+}
 
 int bu_free(struct handle this_handle, void *free_bytes){
-    int length=(int)(pow(2,this_handle.bu_depth)-1);
+    int length=(int)(power(this_handle.bu_depth)-1);
     int i, flag=0;
     for(i=0;i<length;i++){
         if (this_handle.bm_head[i].pointer==free_bytes){
@@ -180,4 +191,5 @@ int bu_free(struct handle this_handle, void *free_bytes){
 
     return flag;
 }
+
 
