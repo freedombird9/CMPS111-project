@@ -19,8 +19,7 @@ int isValid(long number){
 
 struct bu_node * initBitmap(int depth, char *memstart, long int n_bytes){
     int length=(int)(pow(2,depth)-1);
-    struct bu_node bitmap[length];
-    struct bu_node *head=bitmap;
+    struct bu_node *head = (struct bu_node*) malloc(length*sizeof(struct bu_node));
     int i , j=1,sum=0,level_count=0;
     printf("ini=%p end=%p\n",memstart,memstart+n_bytes);
     for(i=0;i<length;){
@@ -58,17 +57,17 @@ void print_bu(struct bu_node *head,int depth){
     int length=(int)(pow(2,depth)-1);
     int i , j=1,sum=0;
     /*printf("in print_bu depth=%d\n",depth);*/
-    printf("%p-\n",&head[0]);
+    /*printf("%p-\n",&head[0]);*/
     /*printf("%d \n",head_flld[0].used);*/
     for(i=0;i<length;){
         if(i==0){
-            printf("&&%p-",head[i].pointer);
-            printf("&&%d \n",head[i].used);
+            /*printf("%p-",head[i].pointer);*/
+            printf("%d \n",head[i].used);
             i=i+1;
             continue;
         }
         if(i==sum+pow(2,j)){
-            printf("%p-",head[i].pointer);
+            /*printf("%p-",head[i].pointer);*/
             printf("%d \n",head[i].used); //;//printf("(s+p=%d i=%d)\n",sum+pow(2,j),i);
             j=j+1;
             sum=sum+pow(2,j-1);
@@ -76,7 +75,7 @@ void print_bu(struct bu_node *head,int depth){
             continue;
         }
         else{
-            printf("%p-",head[i].pointer);
+            /*printf("%p-",head[i].pointer);*/
             printf("%d ",head[i].used);
             i=i+1;
         }
@@ -127,8 +126,8 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
     handlers[handleCount].bu_depth=depth;
     handlers[handleCount].page_size=parm1;
     handlers[handleCount].bm_head=initBitmap(depth, handlers[handleCount].memstart,n_bytes);
-    printf("%p %p %d\n",&handlers[handleCount].bm_head[0].pointer,&handlers[handleCount].bm_head[0].used,depth);
-    printf("head=%p\n",&handlers[handleCount].bm_head[0]);
+    /*printf("%p %p %d\n",&handlers[handleCount].bm_head[0].pointer,&handlers[handleCount].bm_head[0].used,depth);
+    printf("head=%p\n",&handlers[handleCount].bm_head[0]);*/
     print_bu(handlers[handleCount].bm_head,depth);
     /*printf("memstart=%p\n", handlers[handleCount].memstart);*/
   }

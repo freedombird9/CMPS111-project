@@ -10,7 +10,13 @@ int main(void)
     int handle = meminit(1024, 0x1,8);
 
 
-    /*int* q1 = memalloc(handle,127);*/
+    void* q1 = memalloc(handle,256);
+    printf("returned %p\n",q1);
+    void* q2 = memalloc(handle,256);
+    printf("returned %p\n",q2);
+    void* q3 = memalloc(handle,512);
+    printf("returned %p\n",q3);
+
     /*int* q2 = memalloc(handle, 252);
     int* q3 = memalloc(handle, 124);
     int* q4 = memalloc(handle, 64);
