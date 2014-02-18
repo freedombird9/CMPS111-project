@@ -121,6 +121,7 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
   else if (flags & 0x1){
     int depth = power - parm1 + 1;
     printf("depth=%d\n",depth);
+    handlers[handleCount].flags=0x1;
     handlers[handleCount].memstart = malloc(n_bytes);
     handlers[handleCount].bm_head = malloc((pow(2,depth)-1)*sizeof(struct bu_node));
     handlers[handleCount].bu_depth=depth;
@@ -169,7 +170,18 @@ void *memalloc(int handle, long n_bytes){
 
 void memfree (void *region){
   int i;
+  printf("in free\n");
+  printf("lslsls\n");
+  printf("---%d",handleCount);
   for (i = 0; i != handleCount; i++){   /* search for the right handler */
+    printf("i=%d",i);
+      if(handlers[i].flags & 0x1){
+        /*buddy allocator*/
+
+        if(bu_free(handlers[i],region))
+            break;
+
+    }
     if (handlers[i].flags & 0x4) {
       if ((char*) region >= handlers[i].memstart && (char*) region <= handlers[i].memstart + handlers[i].n_bytes){    /* if find the right handler */
 	struct fl_node *search = handlers[i].freelist;

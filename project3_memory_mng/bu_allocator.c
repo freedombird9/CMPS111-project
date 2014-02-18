@@ -6,7 +6,7 @@
 /*type 1 for change all its child to 1, 0 for change all children to 0 and 2 for only change one branch to 1*/
 void modBitmap(int depth, struct bu_node *head,int index, int type);
 
-void bu_free(struct bu_node *head,int index, unsigned long free_bytes);
+int bu_free(struct handle this_handle, void *free_bytes);
 
 int comp_pow(int num);
 int find_parents(int num);
@@ -150,16 +150,34 @@ int find_gradchi(int num, int level){
 
 }
 
-
-/*
-void bu_free(struct handle *handlers[handleCount], unsigned long free_bytes){
-    int min_pg=handlers[handleCount]->page_size;
-    int level, current_level, length;
-    int begin;
-    int i;
-
-    if(free_bytes)
-
+int find_buddy(int num){
+    if (num==0)
+        return -1;
+    if(num%2==0)
+        return num-1;
+    else
+        return num+1;
 
 }
-*/
+
+
+int bu_free(struct handle this_handle, void *free_bytes){
+    int length=(int)(pow(2,this_handle.bu_depth)-1);
+    int i, flag=0;
+    for(i=0;i<length;i++){
+        if (this_handle.bm_head[i].pointer==free_bytes){
+            this_handle.bm_head[i].used=0;
+            flag=1;
+            break;
+        }
+    }
+    modBitmap(this_handle.bu_depth-comp_pow(i)+1, this_handle.bm_head, i, 0);
+    while(find_buddy(i)!=-1){
+        while(this_handle.bm_head[find_buddy(i)].used==0){
+            modBitmap(this_handle.bu_depth-comp_pow(find_parents(i))+1, this_handle.bm_head, find_parents(i), 0);
+        }
+    }
+
+    return flag;
+}
+
