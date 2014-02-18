@@ -7,15 +7,17 @@ void memfree(void* region);
 
 int main(void)
 {
-    int handle = meminit(1024, 0x1,8);
+    int handle = meminit(1024, 0x1,7);
 
 
-    void* q1 = memalloc(handle,256);
+    void* q1 = memalloc(handle,128);
     printf("returned %p\n",q1);
-    void* q2 = memalloc(handle,256);
-    printf("returned %p\n",q2);
-    void* q3 = memalloc(handle,512);
+    /*void* q2 = memalloc(handle,128);
+    printf("returned %p\n",q2);*/
+    void* q3 = memalloc(handle,256);
     printf("returned %p\n",q3);
+    void* q4 = memalloc(handle,128);
+    printf("returned %p\n",q4);
 
     /*int* q2 = memalloc(handle, 252);
     int* q3 = memalloc(handle, 124);

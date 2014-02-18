@@ -10,6 +10,7 @@ void bu_free(struct bu_node *head,int index, unsigned long free_bytes);
 
 int comp_pow(int num);
 int find_parents(int num);
+int find_gradchi(int num, int level);
 
 void *buddy_allot(struct handle *handlers, int handleCount, unsigned long alot_bytes){
     int min_pg=pow(2,handlers[handleCount].page_size);
@@ -61,9 +62,11 @@ void *buddy_allot(struct handle *handlers, int handleCount, unsigned long alot_b
             length=(int)(pow(2,current_level-1));
             printf("%d,%d,%d\n",current_level, begin,length);
             for (i=0;i<length;i=i+1){
-                if((handlers[handleCount].bm_head[begin+i].used==0)&&(handlers[handleCount].bm_head[find_parents(begin+i)].used==1)){
-                    printf("found %d\n",begin+i);
-                    modBitmap(handlers[handleCount].bu_depth-current_level, handlers[handleCount].bm_head,begin+i, 2);
+                if((handlers[handleCount].bm_head[(int)pow(2,current_level-1)-2+begin+i].used==0)&&(handlers[handleCount].bm_head[find_parents(pow(2,current_level-1)-2+begin+i)].used==1)){
+                    printf("at %d found %d\n",current_level,begin+i);
+                    modBitmap(handlers[handleCount].bu_depth-current_level, handlers[handleCount].bm_head,pow(2,current_level-1)-2+begin+i, 2);
+                    modBitmap(handlers[handleCount].bu_depth-current_level,handlers[handleCount].bm_head,find_gradchi((pow(2,current_level-1)-2+begin+i),level-current_level),1);
+                    /*printf("%d\n",find_gradchi((pow(2,current_level-1)-2+begin+i),level-current_level));*/
                     return (void*) handlers[handleCount].bm_head[(begin+1)*(level-current_level)*2].pointer;
                 }
             }
@@ -73,8 +76,8 @@ void *buddy_allot(struct handle *handlers, int handleCount, unsigned long alot_b
             printf("on root\n");
             /*printf("%p\n",handlers[handleCount].bm_head[2].pointer);*/
             modBitmap(handlers[handleCount].bu_depth, handlers[handleCount].bm_head, 0, 2);
-            //modBitmap(handlers[handleCount].bu_depth-level, handlers[handleCount].bm_head, (int)pow(2,level-2)+1, 1);
-            /*printf("%d ",(int)pow(2,level-2)+1);*/
+            modBitmap(handlers[handleCount].bu_depth-level, handlers[handleCount].bm_head, (int)pow(2,level-1)-1, 1);
+            /*printf("%d ",(int)pow(2,level-1)-1);*/
             /*printf("return %p \n", handlers[handleCount].bm_head[(int)pow(2,level-2)+1].pointer);*/
             return (void*) handlers[handleCount].bm_head[(int)pow(2,level-2)+1].pointer;
         }
@@ -134,6 +137,17 @@ int find_parents(int num){
         return num/2-1;
     else
         return num/2;
+}
+
+int find_gradchi(int num, int level){
+    /*printf("in find_gradchid level=%d num=%d\n",level,num);*/
+    if(level>0){
+        num=num*2+1;
+        return find_gradchi(num,level-1);
+    }
+    else
+        return num;
+
 }
 
 
