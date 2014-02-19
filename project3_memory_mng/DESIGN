@@ -137,6 +137,14 @@ Design of Buddy Allocator:
 
 ========= Tests =========
 
+First Test:
+
+We conducted two tests, the first is the required one for the free list allocators. We designed our own workload, which is a bunch of 
+memalloc() and memfree()s, and used our library function to calculate the attributes that reflect the performance of an allocator. The file
+for this first test is test1.c, you can just compile it and run it to see the results printed on the screen. If you want to check whether
+the free list allocators we implemented behave in the right way or not, you can go into the source code file libmem.c and comment in the line: #define _VERBOSE_. Then when you run the test, the linked list will be printed out each time memalloc() or memfree() is called. It shows you the used/unused and size info. Each node is separated by a "+" symbol on the screen.
+
+Second Test:
 
 
 
