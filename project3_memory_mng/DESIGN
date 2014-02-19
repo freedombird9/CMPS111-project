@@ -45,7 +45,7 @@ handleCount is used to denote the number of initializations, it starts with 0 an
 handleCount returned by meminit() to get the information, and pass it to the intended allocators defined in freelist_allocators.c and
 bu_allocator.c.
 
-The design of the Free list allocator:
+Design of the Free List Allocator:
 
 We implemented the linked list right in the same memory pool allocated by the OS in meminit() by adding an overhead to each memory block,
 because due to the requirements, we cannot ask the OS for any more memory after the initialization of the allocator, so storing the nodes of
@@ -94,15 +94,15 @@ The way we build the free list is as follows:
 ------------
 |blockstart|------|
 ------------      |
-|   next   |      |		    When memalloc() is called, we allocate a piece of memory to the user (by returning blockstart),
-------------<-----|
-|          |
-|   mem    | 
-|          |
-------------<------node2
-|   size   |
-------------
-|   used   |
+|   next   |      |		    When memalloc() is called, we allocate a piece of memory to the user (by returning blockstart), and move 
+------------<-----|		    the pointer down n_bytes (the size allocated) to be the address of node2. We then can use this pointer to
+|          |		  	    write the header of node2 and calculate node2's blockstart value. Finally, we link node1 and node2 using
+|   mem    | 			    the next pointer of node1.
+|          |			    
+------------<------node2	    When memalloc() is further called, we can just repeat this mechanism to build up our free list.
+|   size   |			   
+------------			    Here is a design subtlty, if the memory left after a certain memalloc() call is not large enough to store
+|   used   |			    the header of the new node, we just allocate all the memory of the chosen node and mark it as used. 
 ------------
 |blockstart|------|
 ------------      |
@@ -112,6 +112,30 @@ The way we build the free list is as follows:
 |   mem    | 
 |          |
 ------------
+
+So as we can see, the header and the memory under its management is glued together in the same memory space. After some frees, the holes are also in the same linked list in this address space. Some implementations use one list for the free nodes, and another for the used nodes,
+which might be logically cleaner and may simplify the searching for free nodes and used nodes. But since we cannot ask the OS for any more heap after the initilization and we want to dynamically create and delete nodes instead of sparing another piece of memroy and keep a certain
+number of nodes there during initialization, we need to maintain two lists on the same address space if we want to do so, which is complex and unnecessary.
+
+The implementation of first fit, next fit, best fit, worst fit and random fit is pretty straightforward. You can refer to the source code, which is well commented, for details.
+
+Memory Free:
+
+When we want to free a block of memory, we call memfree(void *p), thus the only information we have is the address. So first we have to search
+through all the handlers to check if the address is in that handler. Once we found the handler, we can get its flags to see whether the memory
+is managed by free list or by buddy allocator.
+
+For memory frees in the free list, we first search through the nodes and compare the address to be freed with the blockstart member of each node, and once we find a match, we set this node as unused. Then we need to check if we can coalesce neighboring nodes. Keeping the holes and
+allocated nodes in the same memory space makes it quite simple, we can just access its previous and next nodes (if there is any) to see if we
+can coalesce them.
+
+Design of Buddy Allocator:
+
+
+
+
+
+========= Tests =========
 
 
 
