@@ -14,7 +14,7 @@ struct fl_node{
 
 struct bu_node{
     int used;
-    char *pointer;
+    void *pointer;
 };
 
 struct handle{
@@ -22,7 +22,7 @@ struct handle{
     char *memstart;      /* start point of the memory region to be managed */
     long int n_bytes;    /* the size of that region */
     int numNodes;   /* track the number of nodes that have unallocated memory */
-    
+
     struct fl_node *visited;    /* store the previously visited node ,used for next fit */
     struct fl_node *freelist;
     struct bu_node *bm_head;
@@ -40,7 +40,6 @@ void *memalloc(int handle, long n_bytes);
 void memfree(void* region);
 void evaluate (int handle);
 
-/*type 1 for change all its child to 1, 0 for change all children to 0 and 2 for only change one branch to 1*/
 void modBitmap(int depth, struct bu_node *head,int index, int type);
 
 int bu_free(struct handle this_handle, void *free_bytes);
