@@ -36,6 +36,7 @@ void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_byt
         if(handlers[handlecnt].bm_head[1].used==0){
             /*printf("%p %d\n",handlers[handlecnt].bm_head[1].pointer,handlers[handlecnt].bm_head[1].used);*/
             modBitmap(handlers[handlecnt].bu_depth,handlers[handlecnt].bm_head,0,1);
+            handlers[handlecnt].bm_head[1].a_used=1;
             return (void*) handlers[handlecnt].memstart;
         }
         else
@@ -54,6 +55,7 @@ void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_byt
                 /*printf("find buddy %d\n",begin+1);
                 printf("%d %d\n",handlers[handlecnt].bm_head[begin+i].used,handlers[handlecnt].bm_head[(begin+1)/2].used);
                 printf("%p", handlers[handlecnt].bm_head[begin+i].pointer);*/
+                handlers[handlecnt].bm_head[begin+i].a_used=1;
                 return (void*) handlers[handlecnt].bm_head[begin+i].pointer;
             }
         }
@@ -68,6 +70,7 @@ void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_byt
                     modBitmap(handlers[handlecnt].bu_depth-current_level, handlers[handlecnt].bm_head,power(current_level-1)-2+begin+i, 2);
                     modBitmap(handlers[handlecnt].bu_depth-current_level,handlers[handlecnt].bm_head,find_gradchi((power(current_level-1)-2+begin+i),level-current_level),1);
                     /*printf("%d\n",find_gradchi((pow(2,current_level-1)-2+begin+i),level-current_level));*/
+                    handlers[handlecnt].bm_head[find_gradchi((power(current_level-1)-2+begin+i),level-current_level)].a_used=1;
                     return (void*) handlers[handlecnt].bm_head[power(current_level-1)-2+begin+i].pointer;
                 }
             }
@@ -80,6 +83,7 @@ void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_byt
             modBitmap(handlers[handlecnt].bu_depth-level, handlers[handlecnt].bm_head, (int)power(level-1)-1, 1);
             /*printf("%d ",(int)pow(2,level-1)-1);*/
             /*printf("return %p \n", handlers[handlecnt].bm_head[(int)pow(2,level-2)+1].pointer);*/
+            handlers[handlecnt].bm_head[power(level-1)-1].a_used=1;
             return (void*) handlers[handlecnt].memstart;
         }
     }
@@ -176,12 +180,12 @@ int power(int num){
 int bu_free(struct handle this_handle, void *free_bytes){
     int length=(int)(power(this_handle.bu_depth)-1);
     int i, flag=0;
-    printf("in buddy free find%p\n",free_bytes);
+    /*printf("in buddy free find%p\n",free_bytes);*/
     for(i=length-1;i>0;i--){
-        printf("i=%d p=%p\n",i,this_handle.bm_head[i].pointer);
-        if (this_handle.bm_head[i].pointer==free_bytes){
-            /*printf("&&&&&&&&&&&&&&&&found");*/
+        /*printf("i=%d p=%p\n",i,this_handle.bm_head[i].pointer);*/
+        if ((this_handle.bm_head[i].pointer==free_bytes)&&(this_handle.bm_head[i].a_used==1)){
             this_handle.bm_head[i].used=0;
+            this_handle.bm_head[i].a_used=0;
             flag=1;
             break;
         }

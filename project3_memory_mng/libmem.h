@@ -14,6 +14,7 @@ struct fl_node{
 
 struct bu_node{
     int used;
+    int a_used;
     void *pointer;
 };
 

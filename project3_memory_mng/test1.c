@@ -27,7 +27,7 @@ int main(void)
     void* q4 = memalloc(handle,128);
     printf("returned %p\n",q4);
     memfree(q4);
-    memfree(q1);
+    memfree(q3);
 
     /*int* q2 = memalloc(handle, 252);
     int* q3 = memalloc(handle, 124);

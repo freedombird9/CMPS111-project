@@ -26,6 +26,7 @@ struct bu_node * initBitmap(int depth, char *memstart, long int n_bytes){
         if(i==0){
             head[i].pointer=(void*)memstart;
             head[i].used=0;
+            head[i].a_used=0;
             printf("%d-%p-%d\n",i,head[i].pointer,head[i].used);
             i=i+1;
             continue;
@@ -34,6 +35,7 @@ struct bu_node * initBitmap(int depth, char *memstart, long int n_bytes){
         if(i==sum+power(j)){
             head[i].pointer=(void*)memstart+n_bytes*level_count/(int)power(j);
             head[i].used=0;
+            head[i].a_used=0;
             printf("%d-%p-%d\n",i,head[i].pointer,head[i].used);
             j=j+1;
             sum=sum+power(j-1);
@@ -44,6 +46,7 @@ struct bu_node * initBitmap(int depth, char *memstart, long int n_bytes){
         else{
             head[i].pointer=(void*)memstart+n_bytes*level_count/(int)power(j);
             head[i].used=0;
+            head[i].a_used=0;
             printf("%d-%p-%d ",i,head[i].pointer,head[i].used);
             i=i+1;
             level_count=level_count+1;
@@ -62,13 +65,13 @@ void print_bu(struct bu_node *head,int depth){
     for(i=0;i<length;){
         if(i==0){
             /*printf("%p-",head[i].pointer);*/
-            printf("%d \n",head[i].used);
+            printf("%d-%d \n",head[i].used,head[i].a_used);
             i=i+1;
             continue;
         }
         if(i==sum+power(j)){
             /*printf("%p-",head[i].pointer);*/
-            printf("%d \n",head[i].used); //;//printf("(s+p=%d i=%d)\n",sum+pow(2,j),i);
+            printf("%d-%d \n",head[i].used,head[i].a_used); //;//printf("(s+p=%d i=%d)\n",sum+pow(2,j),i);
             j=j+1;
             sum=sum+power(j-1);
             i=i+1;
@@ -76,7 +79,7 @@ void print_bu(struct bu_node *head,int depth){
         }
         else{
             /*printf("%p-",head[i].pointer);*/
-            printf("%d ",head[i].used);
+            printf("%d-%d ",head[i].used,head[i].a_used);
             i=i+1;
         }
     }
@@ -169,11 +172,9 @@ void *memalloc(int handle, long n_bytes){
 }
 
 void memfree (void *region){
-    int i;
+    int i=0;
     int bu_return;
     printf("in free\n");
-    //printf("lslsls\n");
-    printf("---%d\n",i);
     for (i = 0; i < 10; i++){   /* search for the right handler */
         //printf("= =! i=%d\n",i);
         if(handlers[i].flags & 0x1){
