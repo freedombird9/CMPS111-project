@@ -4,7 +4,7 @@
 #include <math.h>
 #include "libmem.h"
 
- #define _VERBOSE_
+// #define _VERBOSE_
 
 int handleCount = 0;
 
@@ -79,25 +79,23 @@ void print_bu(struct bu_node *head,int depth){
     /*printf("%d \n",head_flld[0].used);*/
     for(i=0;i<length;){
         if(i==0){
-            /*printf("%p-",head[i].pointer);*/
-            printf("%d \n",head[i].used);
+            printf("%d\n",head[i].used);
             i=i+1;
             continue;
         }
         if(i==sum+power(j)){
-            /*printf("%p-",head[i].pointer);*/
-            printf("%d \n",head[i].used); //;//printf("(s+p=%d i=%d)\n",sum+pow(2,j),i);
+            printf("%d\n",head[i].used);
             j=j+1;
             sum=sum+power(j-1);
             i=i+1;
             continue;
         }
         else{
-            /*printf("%p-",head[i].pointer);*/
             printf("%d ",head[i].used);
             i=i+1;
         }
     }
+    printf("\n");
 }
 
 void status(int handle){
@@ -221,8 +219,9 @@ int meminit(long n_bytes, unsigned int flags, int parm1){
     handlers[handleCount].bu_depth=depth;
     handlers[handleCount].page_size=parm1;
     handlers[handleCount].bm_head=initBitmap(depth, handlers[handleCount].memstart,n_bytes);
-
+#ifdef _VERBOSE_
     print_bu(handlers[handleCount].bm_head,depth);
+#endif
   }
   return (handleCount++);
 }

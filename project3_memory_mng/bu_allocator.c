@@ -37,7 +37,7 @@ void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_byt
         begin=power(level-1)-1;
         for (i=0;i<length;i=i+1){
             if((handlers[handlecnt].bm_head[begin+i].used==0)&&(handlers[handlecnt].bm_head[find_parents(begin+i)].used==1)){
-                printf(" %d %d %d\n",level,begin,i);
+                //printf(" %d %d %d\n",level,begin,i);
                 modBitmap(handlers[handlecnt].bu_depth-level,handlers[handlecnt].bm_head,begin+i,1);
                 handlers[handlecnt].bm_head[begin+i].a_used=1;
                 flag=1;
@@ -50,7 +50,7 @@ void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_byt
             length=(int)(power(current_level-1));
             for (i=0;i<length;i=i+1){
                 if((handlers[handlecnt].bm_head[begin+i].used==0)&&(handlers[handlecnt].bm_head[find_parents(begin+i)].used==1)){
-                    printf("%d,%d,%d\n",current_level, begin,i);
+                    //printf("%d,%d,%d\n",current_level, begin,i);
                     modBitmap(handlers[handlecnt].bu_depth-current_level, handlers[handlecnt].bm_head,begin+i, 2);
                     modBitmap(handlers[handlecnt].bu_depth-current_level,handlers[handlecnt].bm_head,find_gradchi((begin+i),level-current_level),1);
                     handlers[handlecnt].bm_head[find_gradchi((power(current_level-1)-2+begin+i),level-current_level)].a_used=1;
@@ -67,7 +67,7 @@ void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_byt
             return (void*) handlers[handlecnt].memstart;
         }
     }
-    printf("don't have much space to allocate\n");
+    printf("don't have much space to allocate %d bytes\n",alot_bytes);
     return handlers[handlecnt].memstart-1;
 }
 

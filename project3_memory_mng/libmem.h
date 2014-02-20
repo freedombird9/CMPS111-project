@@ -6,16 +6,16 @@
 /*store the handlers for free list and buddy allocator*/
 
 struct fl_node{
-    int size;             /* size of this memory block */
-    int used;             /* if it's used or it's free */
-    char *blockstart;       /* the address of the actual memory block (excluding the header) */
+    int size;
+    int used;
+    char *blockstart;
     struct fl_node* next;
 };
 
 struct bu_node{
     int used;
     int a_used;
-    char *pointer;
+    void *pointer;
 };
 
 struct handle{
@@ -41,9 +41,7 @@ void *memalloc(int handle, long n_bytes);
 void memfree(void* region);
 void evaluate (int handle);
 
-/*type 1 for change all its child to 1, 0 for change all children to 0 and 2 for only change one branch to 1*/
 void modBitmap(int depth, struct bu_node *head,int index, int type);
-void status(int handle);
 
 int bu_free(struct handle this_handle, void *free_bytes);
 
@@ -51,7 +49,7 @@ int comp_pow(int num);
 int find_parents(int num);
 int find_gradchi(int num, int level);
 int find_buddy(int num);
-int power(int num);
+
 
 #endif
 
