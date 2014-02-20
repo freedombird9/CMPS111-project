@@ -74,7 +74,7 @@ The way we build the free list is as follows:
 |   used   |			    At initialization, we add one header at the top of the allocated memory pool to track the whole memory.
 ------------                        Note that the actual allocatable memory begins at *blockstart, and the size is the size of the actual
 |blockstart|------|	    	    memory, excluding the header size. By pointing the free list to node1 position, we can write our header
-------------      |                 info. like this. The left figure is the memory layout at initialization.
+------------      |                 info. like this. The left figure is the memory layout upon initialization.
 |   next   |      |                      
 ------------<-----|
 |          |                   
@@ -101,7 +101,7 @@ The way we build the free list is as follows:
 ------------<------node2	    When memalloc() is further called, we can just repeat this mechanism to build up our free list.
 |   size   |			   
 ------------			    Here is a design subtlty, if the memory left after a certain memalloc() call is not large enough to store
-|   used   |			    the header of the new node, we just allocate all the memory of the chosen node and mark it as used. 
+|   used   |			    the header of the new node, we just allocate all the memory of the chosen node and mark it as used.
 ------------
 |blockstart|------|
 ------------      |
@@ -129,18 +129,22 @@ allocated nodes in the same memory space makes it quite simple, we can just acce
 can coalesce them.
 
 ==Design of Buddy Allocator:
-I defined an array to store all memory management information about a buddy allocator, the structure for each page is as follows:
+
+We defined an array to store all memory management information of a buddy allocator, the structure for each page is as follows:
 struct bu_node{
     int used;		/*if the node is in used*/
-    int a_used;	/*if the node is actually in used, which means it has been allocated rather than its children has been allocated*/
+    int a_used;	   /*if the node is actually in use, which means it has been allocated rather than its children has been allocated*/
     void *pointer;	/*start address of the page*/
 };
-Structure objects will be maintained as a tree structure and stored in an array to manage the block of memory levelly. 
-Whenever the meminit() is called and the flags is 0x1, we will calculate the number of pages we are going to use by the total length of memory and the length of minimum page. After that, we call malloc() to allocate the total length of memory. Then we initiate the array that store informations of memory by calling malloc to allocate the memory for this part, set the pointer value to its corresponding address and then set all variables to 0.
 
-functions in bu_allocator.c
+Struct bu_node will be maintained as a tree structure and stored in an array to manage the memory level by level. 
+Whenever the meminit() is called and the flags is 0x1, we calculate the number of pages we are going to need using the total memory size and the minimum page size. After that, we call malloc() to allocate the memory. Then we call malloc() to initiate the array that store the information of memory, set the pointer value to its corresponding address and set all variables to 0.
+
+Functions in bu_allocator.c:
+
 void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_bytes)
-When memallot() is called, we will check the value of the handle’s flag, and if the value equals to 0x1, the buddy_allot() will be called, and the pointer to this handle structure array, the index of the specific handler as well as the length to be allocated will be passed. the array for memory information is pointed by a pointer with in the handler structure, and each terms in the array represent a memory block. We will modify the attributes for the corresponding terms of this array. 
+
+When memalloc() is called, we will check the value of the handle’s flag, and if the value equals to 0x1, buddy_allot() will be called, and the pointer to this handle structure array, the index of the specific handler as well as the length to be allocated will be passed in. The array for memory information is pointed by a pointer with in the handler structure, and each terms in the array represent a memory block. We will modify the attributes for the corresponding terms of this array. 
 The allocator compare the length of bytes need to be allocated and the minimum page size to determine the max level(root is level 1) it may fits and set the variable ‘level’ to that value. It first go over all pages on that level, if there are any blocks whose used is 0 and its buddy’s used is 1, then set that block to be in use and return the start address of that block, also set a_used to be 1. If there are on such block in this level, we will go through the upper level and find such blocks. If the block is found on a higher level, mark the block in use, return the address of the pointer variable, and set the left child in use, and turn the a_used value of the left child to be 1. If not, we will just go a level higher again and find, and if find, we mark it in use as well as its left child and the child of left child, then turn the a_used to 1 of the grand child, and return the block’s address. We will do this procedure until we find such block or we reach the ‘root’ of the tree structure, which is the starting block of the array. If the used value is 0, then change it to 1, return the address and change its left child and all left grand children who is higher or on the ‘level’ to in use, set the a_used value of the left grandchild on the ‘level’ to be one and set all its child in use. If we go through all blocks and didn’t find a match, we will just print ’don't have enough space to allocate’.
 
 void modBitmap(int depth, struct bu_node *head, int index, int type)
@@ -149,14 +153,24 @@ Rather than modifying the used value of each block in buddy_allot(), we call mod
 int bu_free(struct handle this_handle, void *free_bytes)
 The be_free will be called for each buddy allocator when memfree() is called. this_handle is a pointer to a buddy allocator handler structure and *free_bytes is the pointer to the region to be freed. it will go through all items in the bu_node array. If there is a node whose a_used is 1, used is 0, and the *pointer equals to free_bytes, then we will free that block, set a_used to 1 and set it and all its children to be un used by calling modBitmap with type 1. If the buddy of the block we freed is unused, then we will mark their parents unused, and check the parent’s buddy and do the same procedure until we meet the root or the buddy is marked used.
 
-There are several helpers in bu_allocator.c
-int comp_pow(int num)	/*returns how many times it can be devided by 2*/
-int find_parents(int num)	/*return the index of parents for an index */
-int find_gradchi(int num, int level)	/*returns the index of the grand child several level below*/
-int find_buddy(int num)	/*returns the index of its buddy*/
-int power(int num)		/*returns pow(2,num), since the pow() in math.h does not function well in minix */
+There are several helper functions in bu_allocator.c
+
+int comp_pow(int num)	               /*returns how many times it can be devided by 2 */
+int find_parents(int num)	       /*return the index of parents for an index */
+int find_gradchi(int num, int level)   /*returns the index of the grand child several level below */
+int find_buddy(int num)	               /*returns the index of its buddy */
+int power(int num)		       /*returns pow(2,num), since the pow() in math.h does not function well in minix */
+
 ========= Tests =========
 
+First Test:
+
+We conducted two tests, the first is the required one for the free list allocators. We designed our own workload, which is a bunch of 
+memalloc() and memfree()s, and used our library function to calculate the attributes that reflect the performance of an allocator. The file
+for this first test is test1.c, you can just compile it and run it to see the results printed on the screen. If you want to check whether
+the free list allocators we implemented behave in the right way or not, you can go into the source code file libmem.c and comment in the line: #define _VERBOSE_. Then when you run the test, the linked list will be printed out each time memalloc() or memfree() is called. It shows you the used/unused and size info. Each node is separated by a "+" symbol on the screen.
+
+Second Test:
 
 
 
