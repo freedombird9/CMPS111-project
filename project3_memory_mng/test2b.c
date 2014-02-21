@@ -1,5 +1,13 @@
+/*Programming Project 3 - Minix User Space Memory Manager
+Name: Xiaoyuan Lu, Yongfeng Zhang
+CATS: xl37136, yozhang
+CMPS111, Winter 2014
+*/
+
 #include <stdio.h>
 #include "math.h"
+#include "libmem.h"
+
 
 
 int main(void)
