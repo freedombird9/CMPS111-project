@@ -42,7 +42,7 @@ void *ff_allot(struct handle *handlers, int handleNum, long n_bytes){
     }
     search = search->next;
   }
-  printf("memalloc failed, not enough memory\n");
+  printf("don't have enough space to allocate %ld bytes\n", n_bytes);
   return NULL;
 }
 
@@ -92,7 +92,7 @@ void *nf_allot(struct handle *handlers, int handleNum, long n_bytes){
    }
     search = search ->next;
   }
-  printf("memalloc failed, not enough memory\n");
+  printf("don't have enough space to allocate %ld bytes\n", n_bytes);
   return NULL;
 }
 
@@ -112,7 +112,7 @@ void *bf_allot(struct handle *handlers, int handleNum, long n_bytes){
      search = search->next;
    }
   if (!findBest){
-    printf("memalloc failed, not enough memory\n");
+    printf("don't have enough space to allocate %ld bytes\n", n_bytes);
     return NULL;
   }
 
@@ -156,7 +156,7 @@ void *bf_allot(struct handle *handlers, int handleNum, long n_bytes){
 
      return (void*) memAllocd;
    }
-   printf("memalloc failed, not enough memory\n");
+   printf("don't have enough space to allocate %ld bytes\n", n_bytes);
    return NULL;
 }
 
@@ -177,7 +177,7 @@ void *wf_allot(struct handle *handlers, int handleNum, long n_bytes){
     search = search->next;
   }
   if (!findWorst){
-    printf("memalloc failed, not enough memory\n");
+    printf("don't have enough space to allocate %ld bytes\n", n_bytes);
     return NULL;
   }
 
@@ -221,7 +221,7 @@ void *wf_allot(struct handle *handlers, int handleNum, long n_bytes){
 
      return (void*) memAllocd;
    }
-   printf("memalloc failed, not enough memory\n");
+   printf("don't have enough space to allocate %ld bytes\n", n_bytes);
    return NULL;
 }
 
@@ -284,6 +284,6 @@ void *rf_allot(struct handle *handlers, int handleNum, long n_bytes){
     }
     search = search->next;
   }
-  printf("memalloc failed, not enough memory\n");
+  printf("don't have enough space to allocate %ld bytes\n", n_bytes);
   return NULL;
 }

@@ -190,9 +190,10 @@ int power(int num)		       /*returns pow(2,num), since the pow() in math.h does 
 
 First Test:
 
-We conducted two tests, the first is the required one for the free list allocators. We designed our own workload, which is a bunch of 
-memalloc() and memfree()s, and used our library function to calculate the attributes that can reflect the performance of an allocator. The file
-for this first test is test1.c, you can just compile it and run it to see the results printed on the screen. If you want to check whether
-the free list allocators we implemented behave in the right way, you can go into the source code file libmem.c and comment in the line: #define _VERBOSE_. Then when you run the test, the linked list will be printed out each time memalloc() or memfree() is called. It shows you the used/unused and size info. Each node is separated by a "+" symbol on the screen.
+We conducted two tests, the first is the required one for the free list allocators. We designed our own workload, which is a bunch of memalloc() and memfree()s, and used our library function to calculate the attributes that can reflect the performance of an allocator. 
+The file for this first test is test1.c, you can just compile it and run it to see the results printed on the screen. If you want to check whether the free list allocators we implemented behave in the right way, you can go into the source code file libmem.c and comment in the line: #define _VERBOSE_. Then when you run the test, the linked list will be printed out each time memalloc() or memfree() is called. It shows you the used/unused and size info. Each node is separated by a "+" symbol on the screen.
 
 Second Test:
+
+In the second test, we designed two test sets to compare the performance between to two kind of allocators. The first work set allocates blocks equal or a little smaller than the page sizes on each level. We call memalloc() and memfree() alternatively, and see the memory allocation information. The test2a.c is for the buddy allocator test program and test2b.c for the free list test program. At the end we call evaluation() for free list handler to get the evaluation information on a specific free list handler and call status() for buddy allocator handler. 
+The same as the first test, if you want to check if the allocators world as expected, just go into the source code file libmem.c and comment in the line: #define _VERBOSE_. You can see a tree structure showing the manage information for buddy allocator after each operation.

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <math.h>
-#include "libmem.h"
+
 
 
 int main(void)
