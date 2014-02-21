@@ -37,11 +37,11 @@ int main(void)
     memalloc(handle6,300);
     void* q11 = memalloc(handle6,280);      //no enough space
     memfree(q10);
-    memalloc(handle6,100);
+    //memalloc(handle6,100);
     //memfree(q11);
     memalloc(handle6,20);
     memalloc(handle6,180);      //no enough space*/
-    memalloc(handle6,8);
+    //memalloc(handle6,8);
 
     evaluate(handle5);
     evaluate(handle6);
