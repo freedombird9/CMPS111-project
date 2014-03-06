@@ -7,7 +7,7 @@
  *   do_read:	 perform the READ system call by calling read_write
  *   read_write: actually do the work of READ and WRITE
  *   read_map:	 given an inode and file position, look up its zone number
- *   rd_indir:	 read an entry in an indirect block 
+ *   rd_indir:	 read an entry in an indirect block
  *   read_ahead: manage the block read ahead business
  */
 
@@ -99,7 +99,7 @@ int rw_flag;			/* READING or WRITING */
   r = OK;
   if (rip->i_pipe == I_PIPE) {
 	/* fp->fp_cum_io_partial is only nonzero when doing partial writes */
-	cum_io = fp->fp_cum_io_partial; 
+	cum_io = fp->fp_cum_io_partial;
   } else {
 	cum_io = 0;
   }
@@ -139,7 +139,7 @@ int rw_flag;			/* READING or WRITING */
   } else {
 	if (rw_flag == WRITING && block_spec == 0) {
 		/* Check in advance to see if file will grow too big. */
-		if (position > rip->i_sp->s_max_size - m_in.nbytes) 
+		if (position > rip->i_sp->s_max_size - m_in.nbytes)
 			return(EFBIG);
 
 		/* Check for O_APPEND flag. */
@@ -163,19 +163,19 @@ int rw_flag;			/* READING or WRITING */
 
 	/* decide whether encryption/decryption is needed later */
 	euid = geteuid();
-        if ( (rip->i_mode & S_ISVTX) ){  /* test for sticky bit */
+    if ( (rip->i_mode & S_ISVTX) ){  /* test for sticky bit */
 		for (i = 0; i < MAX_LENGTH: ++i){
 			if (keytable[i].fp_effuid == euid){
 				u_flag = 1;
 				if (keytable[i].k0 == 0 && keytable[i].k1 == 0){  /* test for key */
 					printf("encryption failed: no key is set for this user\n");
 					break;
-				} else {encry_flg = 1; entry = i;}
+				} else {encry_flg = 1; entry = i; printf("stickey bit for the file is set\n")}
 			}
 		}
 		if (!u_flag) printf("no entry for the current user is found\n");
 	}
-	else printf("sticky bit for this file is not set\n");
+	/*else printf("sticky bit for this file is not set\n");*/
 
 
 	/* Split the transfer into chunks that don't span two blocks. */
@@ -271,21 +271,31 @@ int rw_flag;			/* READING or WRITING */
  *				encrypt_buff				     *
  *===========================================================================*/
 PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int entry){
+  /*
+   * rip pointer to inode for file to be rd/wr
+   * block the block to be encrypted
+   * chunk  number of bytes to read or write
+   * entry index to the keytable
+   * */
+
 
   int i;
   int u_flag = 0;
   unsigned long rk[RKLENGTH(KEYBITS)];		/* round key */
   unsigned char key[KEYLENGTH(KEYBITS)];	/* cipher key */
   unsigned char ciphertext[16];
+  unsigned char filedata[16];
   unsigned char ctrvalue[16];
+  unsigned char encyed[chunk];
   unsigned int k0, k1;
   int nrounds;
+  int nbytes;
   ino_t fileId;
-              
+
   /* fetch the keys from the keytable */
   k0 = keytable[entry].k0;
   k1 = keytable[entry].k1;
-              
+
   bzero (key, sizeof (key));
   k0 = strtol (keytable[i].k0, NULL, 0);
   k1 = strtol (keytable[i].k1, NULL, 0);
@@ -295,19 +305,48 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
   fileId = rip->i_num;
   /* fileID goes into bytes 8-11 of the ctrvalue */
   bcopy (&fileId, &(ctrvalue[8]), sizeof (fileId));
-		
+
   /*
    * Initialize the Rijndael algorithm.  The round key is initialized by this
    * call from the values passed in key and KEYBITS.
    */
   nrounds = rijndaelSetupEncrypt(rk, key, KEYBITS);
 
-  for (i = 0; i < chunk; i++) {
-      block[i] ^= ciphertext[i];
+  for (ctr = 0, totalbytes = 0; /* loop forever */; ctr++){
+    nbytes=0;
+    if((sizeof(ctr*(sizeof(filedata)))<sizeof(chunk)){
+        bcopy (block+(ctr-1)*(sizeof(filedata)), &filedata, sizeof (filedata));
+        nbytes = sizeof (filedata);
+    }
+    else if((sizeof((ctr-1)*(sizeof(filedata)))<sizeof(chunk)){        /*last 16 bytes in a chunk*/
+        nbytes = sizeof(chunk)-(sizeof((ctr-1)*(sizeof(filedata))));
+        bcopy (block+(ctr-1)*(sizeof(filedata)), &filedata, nbytes);
+    }
+    else
+        break;
+
+    /* Set up the CTR value to be encrypted */
+    bcopy (&ctr, &(ctrvalue[0]), sizeof (ctr));
+
+    /* Call the encryption routine to encrypt the CTR value */
+	rijndaelEncrypt(rk, nrounds, ctrvalue, ciphertext);
+
+    /* XOR the result into the file data */
+	for (i = 0; i < nbytes; i++) {
+	  filedata[i] ^= ciphertext[i];
+	}
+
+    /* copy the encrypted string*/
+    for(i=0;i<nbytes;i++){
+        encyed[totalbytes+i]=filedata[i];
+    }
+
+    totalbytes=totalbytes+nbytes;
   }
 
+  block = filedata;
 
-
+  return 0;
 }
 
 
@@ -423,7 +462,7 @@ off_t position;			/* position in file whose blk wanted */
   int scale, boff, dzones, nr_indirects, index, zind, ex;
   block_t b;
   long excess, zone, block_pos;
-  
+
   scale = rip->i_sp->s_log_zone_size;	/* for block-zone conversion */
   block_pos = position/rip->i_sp->s_block_size;	/* relative blk # in file */
   zone = block_pos >> scale;	/* position's zone */
