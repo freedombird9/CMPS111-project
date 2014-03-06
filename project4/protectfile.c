@@ -99,10 +99,7 @@ int main(int argc, char **argv){
 	  fprintf(stderr, "encryption error: sticky bit is already set\n");
 	  return 1;
 	}
-    if ( chmod(filename, S_ISVTX|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH ) != 0){    /* otherwise, set the sticky bit */
-      fprintf(stderr, "error occureed while setting on the sticky bit\n");
-      return 1;
-    }
+
   }
   
   nrounds = rijndaelSetupEncrypt(rk, key, KEYBITS);
@@ -155,6 +152,14 @@ int main(int argc, char **argv){
 	/* Increment the total bytes written */
 	totalbytes += nbytes;
   }   /* end for */ 
+  
+  if (argv[1] == 'e'){    /* after encryption, set the sticky it */
+	if ( chmod(filename, S_ISVTX|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH ) != 0){ 
+      fprintf(stderr, "error occureed while setting on the sticky bit\n");
+      return 1;
+    }
+   	
+  }
   
   close(fd);
   return 0;
