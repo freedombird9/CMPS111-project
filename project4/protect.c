@@ -216,7 +216,6 @@ struct inode *ip;		/* ptr to inode whose file sys is to be cked */
 /*===========================================================================*
  *				setkey				     *
  *===========================================================================*/
-int entrycount = 0;
 
 PUBLIC int do_setkey(){
 
@@ -224,18 +223,34 @@ PUBLIC int do_setkey(){
 	int set = 0;
 	unsigned int k0;
 	unsigned int k1;
+    int entrycount=0;
+    uid_t euid ;
 
 	k0 = m_in.m1_i1;
 	k1 = m_in.m1_i2;
 
-	uid_t euid = geteuid();
+	euid = geteuid();
+#ifdef _DEBUG_
+    printf("euid=%d\n",euid);
+#endif
+    /* the uid for root is 0*/
 
 	for (i = 0; i < MAX_LENGTH; ++i){      /* if the entry for this user is already in the table, just update the table */
-		if (keytable[i].fp_effuid == euid){
+        if ((keytable[i].used == 1)&&(keytable[i].fp_effuid == euid)){
 			keytable[i].k0 = k0;
 			keytable[i].k1 = k1;
 			set = 1;
+#ifdef _DEBUG_
+        printf("i=%d id=%s  k0=%u k1=%u used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
+#endif
 		}
+        if(keytable[i].used==0){
+            entrycount=i;
+#ifdef _DEBUG_
+        printf("i=%d id=%s  k0=%u k1=%u used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
+#endif
+            break;
+        }
 	}
 	if (!set && entrycount > MAX_LENGTH - 1){   /* if the table is full, print error */
 		printf("error: keytable is full\n");
@@ -243,14 +258,19 @@ PUBLIC int do_setkey(){
 
 	}
 	else if (!set){      /* otherwise, add a new entry for this user */
+        keytable[entrycount].used = 1;
 		keytable[entrycount].fp_effuid = euid;
 		keytable[entrycount].k0 = k0;
 		keytable[entrycount].k1 = k1;
 		++entrycount;      /* entrycount points to the empty entry */
+#ifdef _DEBUG_
+        printf("set new key for the user at %d\n",entrycount-1);
+        printf("id=%s  k0=%u k1=%u used=%d entrycount=%d\n", keytable[entrycount-1].fp_effuid, keytable[entrycount-1].k0, keytable[entrycount-1].k1, keytable[entrycount-1].used);
+#endif
 	}
 
 #ifdef _DEBUG_
-	printf("do_setkey() called, k0: %u   k1: %u\n", k0, k1);
+	printf("in do_setkey() called, k0: %u   k1: %u\n", k0, k1);
 #endif
 	return 0;
 

@@ -17,7 +17,7 @@ EXTERN Dev_t root_dev;		/* device number of the root device */
 EXTERN time_t boottime;		/* time in seconds at system boot */
 
 EXTERN struct table{
-
+  int useds;
   unsigned int k0;
   unsigned int k1;
   uid_t fp_effuid;
