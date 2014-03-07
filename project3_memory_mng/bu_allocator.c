@@ -78,6 +78,7 @@ void *buddy_allot(struct handle *handlers, int handlecnt, unsigned long alot_byt
     return handlers[handlecnt].memstart-1;
 }
 
+//
 void modBitmap(int depth, struct bu_node *head, int index, int type){
     if(type==1){
         head[index].used=1;
