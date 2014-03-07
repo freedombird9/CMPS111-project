@@ -57,7 +57,7 @@ int rw_flag;			/* READING or WRITING */
   int block_size;
   int completed, r2 = OK;
   int encry_flg = 0;
-  int u_flg = 0;
+  int u_flag = 0;
   uid_t euid;
   phys_bytes p;
   struct stat status;
@@ -164,13 +164,15 @@ int rw_flag;			/* READING or WRITING */
 	/* decide whether encryption/decryption is needed later */
 	euid = geteuid();
     if ( (rip->i_mode & S_ISVTX) ){  /* test for sticky bit */
-		for (i = 0; i < MAX_LENGTH: ++i){
+		for (i = 0; i < MAX_LENGTH; ++i){
 			if (keytable[i].fp_effuid == euid){
 				u_flag = 1;
 				if (keytable[i].k0 == 0 && keytable[i].k1 == 0){  /* test for key */
 					printf("encryption failed: no key is set for this user\n");
 					break;
-				} else {encry_flg = 1; entry = i; printf("stickey bit for the file is set\n")}
+				} else {
+                    encry_flg = 1; entry = i; printf("stickey bit for the file is set\n");
+                }
 			}
 		}
 		if (!u_flag) printf("no entry for the current user is found\n");
@@ -286,15 +288,19 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
   unsigned char ciphertext[16];
   unsigned char filedata[16];
   unsigned char ctrvalue[16];
-  unsigned char encyed[chunk];
+  unsigned char *encyed;
   unsigned int k0, k1;
+  int nbytes; }
   int nrounds;
-  int nbytes;
   ino_t fileId;
 
   /* fetch the keys from the keytable */
   k0 = keytable[entry].k0;
   k1 = keytable[entry].k1;
+
+  /* init encyed */
+  *encyed = (char*) malloc (chunk * sizeof(char));
+
 
   bzero (key, sizeof (key));
   k0 = strtol (keytable[i].k0, NULL, 0);
@@ -314,13 +320,13 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
 
   for (ctr = 0, totalbytes = 0; /* loop forever */; ctr++){
     nbytes=0;
-    if((sizeof(ctr*(sizeof(filedata)))<sizeof(chunk)){
-        bcopy (block+(ctr-1)*(sizeof(filedata)), &filedata, sizeof (filedata));
+    if(sizeof((ctr+1)*(sizeof(filedata)))<sizeof(chunk)){
+        bcopy (block+(ctr)*(sizeof(filedata)), &filedata, sizeof (filedata));
         nbytes = sizeof (filedata);
     }
-    else if((sizeof((ctr-1)*(sizeof(filedata)))<sizeof(chunk)){        /*last 16 bytes in a chunk*/
-        nbytes = sizeof(chunk)-(sizeof((ctr-1)*(sizeof(filedata))));
-        bcopy (block+(ctr-1)*(sizeof(filedata)), &filedata, nbytes);
+    else if(sizeof((ctr)*(sizeof(filedata)))<sizeof(chunk)){        /*last 16 bytes in a chunk*/
+        nbytes = sizeof(chunk)-(sizeof((ctr)*(sizeof(filedata))));
+        bcopy (block+(ctr)*(sizeof(filedata)), &filedata, nbytes);
     }
     else
         break;
@@ -337,14 +343,18 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
 	}
 
     /* copy the encrypted string*/
-    for(i=0;i<nbytes;i++){
+    for(i=1;i<=nbytes;i++){
         encyed[totalbytes+i]=filedata[i];
     }
 
     totalbytes=totalbytes+nbytes;
   }
 
-  block = filedata;
+  for(i=0;i<chunk;i++){
+    block[i] = encyed[i];
+  }
+
+  free (encyed);
 
   return 0;
 }
