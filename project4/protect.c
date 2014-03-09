@@ -223,8 +223,8 @@ PUBLIC int do_setkey(){
 	int set = 0;
 	unsigned int k0;
 	unsigned int k1;
-    int entrycount=0;
-    uid_t euid ;
+    	int entrycount=0;
+    	uid_t euid ;
 
 	k0 = m_in.m1_i1;
 	k1 = m_in.m1_i2;
@@ -236,24 +236,26 @@ PUBLIC int do_setkey(){
     /* the uid for root is 0*/
 
 	for (i = 0; i < MAX_LENGTH; ++i){      /* if the entry for this user is already in the table, just update the table */
-        if ((keytable[i].used == 1)&&(keytable[i].fp_effuid == euid)){
+        	if ( keytable[i].used && (keytable[i].fp_effuid == euid)){
 			keytable[i].k0 = k0;
 			keytable[i].k1 = k1;
 			set = 1;
 #ifdef _DEBUG_
-        printf("i=%d id=%s  k0=%u k1=%u used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
+        		printf("i=%d id=%s  k0=%u k1=%u used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
 #endif
+			break;
 		}
-        if(keytable[i].used==0){
-            entrycount=i;
+       		if(keytable[i].used==0){
+            		entrycount=i;
 #ifdef _DEBUG_
-        printf("i=%d id=%s  k0=%u k1=%u used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
+        		printf("i=%d id=%s  k0=%u k1=%u used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
 #endif
-            break;
-        }
+ 	          	break;
+        	}
 	}
+
 	if (!set && entrycount > MAX_LENGTH - 1){   /* if the table is full, print error */
-		printf("error: keytable is full\n");
+		printf("setkey error: keytable is full\n");
 		return (-1);
 
 	}
