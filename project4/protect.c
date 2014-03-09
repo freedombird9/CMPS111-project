@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <minix/callnr.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include "buf.h"
 #include "file.h"
 #include "fproc.h"
@@ -31,6 +32,9 @@ PUBLIC int do_chmod()
 
   register struct inode *rip;
   register int r;
+
+  mode_t bits;
+  mode_t test_en;
 
   /* Temporarily open the file. */
   if (fetch_name(m_in.name, m_in.name_length, M3) != OK) return(err_code);
@@ -55,6 +59,13 @@ PUBLIC int do_chmod()
   if (!super_user && rip->i_gid != fp->fp_effgid)rip->i_mode &= ~I_SET_GID_BIT;
   rip->i_update |= CTIME;
   rip->i_dirt = DIRTY;
+
+  bits = rip->i_mode;
+  test_en = bits & S_ISVTX;
+  printf("after change %o %o\n",bits,test_en);
+  if (test_en){
+    printf("encrypted\n");
+  }
 
   put_inode(rip);
   return(OK);
