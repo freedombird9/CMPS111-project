@@ -290,8 +290,8 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
   unsigned char ctrvalue[16];
   unsigned char *encyed;
   unsigned int k0, k1;
-  int nbytes; }
   int nrounds;
+  int ctr, totalbytes, n_bytes;
   ino_t fileId;
 
   /* fetch the keys from the keytable */
@@ -319,14 +319,14 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
   nrounds = rijndaelSetupEncrypt(rk, key, KEYBITS);
 
   for (ctr = 0, totalbytes = 0; /* loop forever */; ctr++){
-    nbytes=0;
+    n_bytes=0;
     if(sizeof((ctr+1)*(sizeof(filedata)))<sizeof(chunk)){
         bcopy (block+(ctr)*(sizeof(filedata)), &filedata, sizeof (filedata));
-        nbytes = sizeof (filedata);
+        n_bytes = sizeof (filedata);
     }
     else if(sizeof((ctr)*(sizeof(filedata)))<sizeof(chunk)){        /*last 16 bytes in a chunk*/
-        nbytes = sizeof(chunk)-(sizeof((ctr)*(sizeof(filedata))));
-        bcopy (block+(ctr)*(sizeof(filedata)), &filedata, nbytes);
+        n_bytes = sizeof(chunk)-(sizeof((ctr)*(sizeof(filedata))));
+        bcopy (block+(ctr)*(sizeof(filedata)), &filedata, n_bytes);
     }
     else
         break;
@@ -338,16 +338,16 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
 	rijndaelEncrypt(rk, nrounds, ctrvalue, ciphertext);
 
     /* XOR the result into the file data */
-	for (i = 0; i < nbytes; i++) {
+	for (i = 0; i < n_bytes; i++) {
 	  filedata[i] ^= ciphertext[i];
 	}
 
     /* copy the encrypted string*/
-    for(i=1;i<=nbytes;i++){
+    for(i=1;i<=n_bytes;i++){
         encyed[totalbytes+i]=filedata[i];
     }
 
-    totalbytes=totalbytes+nbytes;
+    totalbytes=totalbytes+n_bytes;
   }
 
   for(i=0;i<chunk;i++){
@@ -435,7 +435,8 @@ int entry;			/* index to the keytable */
   if (rw_flag == READING) {
 
 	if (encry_flg){   /* encryption to the block is done here */
-		encrypt_buff(rip, (bp->b_data+off), chunk, entry);
+        printf("encry_flg = %d",  encry_flg);
+		/*encrypt_buff(rip, (bp->b_data+off), chunk, entry);*/
 	}
 
 	/* Copy a chunk from the block buffer to user space. */
