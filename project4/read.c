@@ -21,10 +21,14 @@
 #include "inode.h"
 #include "param.h"
 #include "super.h"
-/* #include <sys/stat.h>*/
+#include "rijndael.h"
+#include <sys/stat.h>
+
+#define KEYBITS 128
+
 FORWARD _PROTOTYPE( int rw_chunk, (struct inode *rip, off_t position,
 	unsigned off, int chunk, unsigned left, int rw_flag,
-	char *buff, int seg, int usr, int block_size, int *completed));
+	char *buff, int seg, int usr, int block_size, int *completed, int encry_flg, int entry));
 /* #define _DEBUG_ */
 /*===========================================================================*
  *				do_read					     *
@@ -174,13 +178,14 @@ int rw_flag;			/* READING or WRITING */
 
 			printf("keytable: k0: %d, k1: %d\n", keytable[i].k0, keytable[i].k1);
 
-			if (keytable[i].fp_effuid == euid){
+			if (keytable[i].fp_effuid == uid){
 				u_flag = 1;
 				if (keytable[i].k0 == 0 && keytable[i].k1 == 0){  /* test for key */
 					printf("encryption failed: no key is set for this user\n");
 					break;
 				} else {
                     			encry_flg = 1; entry = i; printf("stickey bit for the file is set\n");
+					break;
 					}
 			}
 		}
@@ -211,7 +216,7 @@ int rw_flag;			/* READING or WRITING */
 
 		/* Read or write 'chunk' bytes. */
 		r = rw_chunk(rip, position, off, chunk, (unsigned) m_in.nbytes,
-			     rw_flag, m_in.buffer, seg, usr, block_size, &completed);
+			     rw_flag, m_in.buffer, seg, usr, block_size, &completed, encry_flg, entry);
 		if (r != OK) break;	/* EOF reached */
 		if (rdwt_err < 0) break;
 
@@ -283,10 +288,102 @@ int rw_flag;			/* READING or WRITING */
 }
 
 /*===========================================================================*
+ *				encrypt_buff	 			     *
+ *===========================================================================*/
+
+PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int entry){
+  /*
+   * rip pointer to inode for file to be rd/wr
+   * block the block to be encrypted
+   * chunk  number of bytes to read or write
+   * entry index to the keytable
+   * */
+
+
+  int i;
+  int u_flag = 0;
+  unsigned long rk[RKLENGTH(KEYBITS)];		/* round key */
+  unsigned char key[KEYLENGTH(KEYBITS)];	/* cipher key */
+  unsigned char ciphertext[16];
+  unsigned char filedata[16];
+  unsigned char ctrvalue[16];
+  unsigned char *encyed;
+  unsigned int k0, k1;
+  int nrounds;
+  int ctr, totalbytes, n_bytes;
+  ino_t fileId;
+
+  /* fetch the keys from the keytable */
+  k0 = keytable[entry].k0;
+  k1 = keytable[entry].k1;
+
+  /* init encyed */
+  encyed = (char*) malloc (chunk);
+
+
+  bzero (key, sizeof (key));
+  k0 = strtol (keytable[i].k0, NULL, 0);
+  k1 = strtol (keytable[i].k1, NULL, 0);
+  bcopy (&k0, &(key[0]), sizeof (k0));
+  bcopy (&k1, &(key[sizeof(k0)]), sizeof (k1));
+
+  fileId = rip->i_num;
+  /* fileID goes into bytes 8-11 of the ctrvalue */
+  bcopy (&fileId, &(ctrvalue[8]), sizeof (fileId));
+
+  /*
+   * Initialize the Rijndael algorithm.  The round key is initialized by this
+   * call from the values passed in key and KEYBITS.
+   */
+  nrounds = rijndaelSetupEncrypt(rk, key, KEYBITS);
+
+  for (ctr = 0, totalbytes = 0; /* loop forever */; ctr++){
+    n_bytes=0;
+    if( ((ctr+1) * sizeof(filedata) ) < chunk ){
+        bcopy (block+(ctr)*(sizeof(filedata)), &filedata, sizeof (filedata));
+        n_bytes = sizeof (filedata);
+    }
+    else if( (ctr * sizeof(filedata)) < chunk ){        /*last 16 bytes in a chunk*/
+        n_bytes = chunk - (ctr * sizeof(filedata));
+        bcopy (block + (ctr)*(sizeof(filedata)), &filedata, n_bytes);
+    }
+    else
+        break;
+
+    /* Set up the CTR value to be encrypted */
+    bcopy (&ctr, &(ctrvalue[0]), sizeof (ctr));
+
+    /* Call the encryption routine to encrypt the CTR value */
+	rijndaelEncrypt(rk, nrounds, ctrvalue, ciphertext);
+
+    /* XOR the result into the file data */
+	for (i = 0; i < n_bytes; i++) {
+	  filedata[i] ^= ciphertext[i];
+	}
+
+    /* copy the encrypted string*/
+    for(i=1;i<=n_bytes;i++){
+        encyed[totalbytes+i]=filedata[i];
+    }
+
+    totalbytes=totalbytes+n_bytes;
+  }
+
+  for(i=0;i<chunk;i++){
+    block[i] = encyed[i];
+  }
+
+  free (encyed);
+
+  return 0;
+}
+
+
+/*===========================================================================*
  *				rw_chunk				     *
  *===========================================================================*/
 PRIVATE int rw_chunk(rip, position, off, chunk, left, rw_flag, buff,
- seg, usr, block_size, completed)
+ seg, usr, block_size, completed, encry_flg, entry)
 register struct inode *rip;	/* pointer to inode for file to be rd/wr */
 off_t position;			/* position within file to read or write */
 unsigned off;			/* off within the current block */
@@ -298,6 +395,8 @@ int seg;			/* T or D segment in user space */
 int usr;			/* which user process */
 int block_size;			/* block size of FS operating on */
 int *completed;			/* number of bytes copied */
+int encry_flg;
+int entry;
 {
 /* Read or write (part of) a block. */
 
@@ -349,12 +448,21 @@ int *completed;			/* number of bytes copied */
   }
 
   if (rw_flag == READING) {
+	
+	if (encry_flg){
+		encrypt_buff(rip, bp->b_data+off, chunk, entry);
+	}
+
 	/* Copy a chunk from the block buffer to user space. */
 	r = sys_vircopy(FS_PROC_NR, D, (phys_bytes) (bp->b_data+off),
 			usr, seg, (phys_bytes) buff,
 			(phys_bytes) chunk);
   } else {
-	/* Copy a chunk from user space to the block buffer. */  
+	/* Copy a chunk from user space to the block buffer. */
+
+	if (encry_flg){
+		encrypt_buff(rip, (phys_bytes) buff, chunk, entry);
+	} 
 	r = sys_vircopy(usr, seg, (phys_bytes) buff,
 			FS_PROC_NR, D, (phys_bytes) (bp->b_data+off),
 			(phys_bytes) chunk);
