@@ -252,14 +252,14 @@ PUBLIC int do_setkey(){
 			keytable[i].k1 = k1;
 			set = 1;
 #ifdef _DEBUG_
-        		printf("i=%d id=%s  k0=%u k1=%u used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
+        		printf("i=%d id=%d  k0=%x k1=%x used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
 #endif
 			break;
 		}
        		if(keytable[i].used==0){
             		entrycount=i;
 #ifdef _DEBUG_
-        		printf("i=%d id=%s  k0=%u k1=%u used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
+        		printf("i=%d id=%d  k0=%x k1=%x used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
 #endif
  	          	break;
         	}
@@ -278,12 +278,12 @@ PUBLIC int do_setkey(){
 		++entrycount;      /* entrycount points to the empty entry */
 #ifdef _DEBUG_
         printf("set new key for the user at %d\n",entrycount-1);
-        printf("id=%s  k0=%u k1=%u used=%d entrycount=%d\n", keytable[entrycount-1].fp_effuid, keytable[entrycount-1].k0, keytable[entrycount-1].k1, keytable[entrycount-1].used);
+        printf("id=%s  k0=%x k1=%x used=%d entrycount=%d\n", keytable[entrycount-1].fp_effuid, keytable[entrycount-1].k0, keytable[entrycount-1].k1, keytable[entrycount-1].used);
 #endif
 	}
 
 #ifdef _DEBUG_
-	printf("in do_setkey() called, k0: %u   k1: %u\n", k0, k1);
+	printf("in do_setkey() called, k0: %x   k1: %x\n", k0, k1);
 #endif
 	return 0;
 
