@@ -313,6 +313,9 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
   k0 = keytable[entry].k0;
   k1 = keytable[entry].k1;
 
+  k0=0x1000;
+  k1=0x2000;
+
 #ifdef _DEBUG_
   printf ("encrypt_buff gets called\n");
 #endif
@@ -393,7 +396,7 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
         printf("%x",ctrvalue[k]);
     printf(" rk:");
     for (j=0;j<RKLENGTH(KEYBITS);j++){
-        printf("%lu,",rk[j]);
+        printf("%x,",rk[j]);
     }
     printf(" nrounds :%lu\n", nrounds);
 

@@ -88,7 +88,7 @@ int main(int argc, char **argv)
   int i, nbytes, nwritten , ctr;
   int k,j;
   int totalbytes;
-  int	k0, k1;
+  unsigned int	k0, k1;
   int fileId = 0x1234;
   int nrounds;					/* # of Rijndael rounds */
   char *password;				/* supplied (ASCII) password */
@@ -125,7 +125,9 @@ int main(int argc, char **argv)
   bzero (rk, sizeof (rk));
   k0 = strtol (argv[1], NULL, 0);
   k1 = strtol (argv[2], NULL, 0);
-  bcopy (&k0, &(key[0]), sizeof (k0));
+  k0=0x1000;
+  k1=0x2000;
+ bcopy (&k0, &(key[0]), sizeof (k0));
   bcopy (&k1, &(key[sizeof(k0)]), sizeof (k1));
   filename = argv[3];
 #endif
@@ -135,6 +137,7 @@ int main(int argc, char **argv)
     printf("%lu,",rk[j]);
   }
   printf("\n");*/
+
 
   if( stat(filename, &status) != 0 ){
     fprintf(stderr, "error occurred getting the stat of the file\n");
