@@ -30,12 +30,14 @@ void getpassword (const char *password, unsigned char *key, int keylen)
   for (i = 0; i < keylen; i++) {
     if (*password == '\0') {
       key[i] = 0;
+      printf("%d",key[i]);
     } else {
       /* Add the first of two digits to the current key value */
       key[i] = hexvalue (*(password++)) << 4;
       /* If there's a second digit at this position, add it */
       if (*password != '\0') {
 		key[i] |= hexvalue (*(password++));
+        printf("%d",key[i]);
       }
     }
   }
@@ -69,6 +71,8 @@ int main(int argc, char **argv){
 
   filename = argv[3];
   getpassword (argv[2], key, sizeof (key));
+
+  printf("\nargv= %s",argv[2]);
 
   if( stat(filename, &status) != 0 ){
     fprintf(stderr, "error occurred getting the stat of the file\n");
@@ -153,7 +157,7 @@ int main(int argc, char **argv){
 	totalbytes += nbytes;
   }   /* end for */
 
-  if (argv[1] == 'e'){    /* after encryption, set the sticky it */
+  if (*argv[1] == 'e'){    /* after encryption, set the sticky it */
 	if ( chmod(filename, S_ISVTX|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH ) != 0){
       fprintf(stderr, "error occureed while setting on the sticky bit\n");
       return 1;
