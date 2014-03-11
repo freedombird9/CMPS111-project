@@ -313,8 +313,6 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
   k0 = keytable[entry].k0;
   k1 = keytable[entry].k1;
 
-  k0=0x1000;
-  k1=0x2000;
 
 #ifdef _DEBUG_
   printf ("encrypt_buff gets called\n");
@@ -507,6 +505,11 @@ int entry;
 	r = sys_vircopy(FS_PROC_NR, D, (phys_bytes) (bp->b_data+off),
 			usr, seg, (phys_bytes) buff,
 			(phys_bytes) chunk);
+
+    if (encry_flg){
+		encrypt_buff(rip, bp->b_data+off, chunk, entry);
+	}
+
   } else {
 	/* Copy a chunk from user space to the block buffer. */
 

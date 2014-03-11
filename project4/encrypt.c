@@ -125,8 +125,6 @@ int main(int argc, char **argv)
   bzero (rk, sizeof (rk));
   k0 = strtol (argv[1], NULL, 0);
   k1 = strtol (argv[2], NULL, 0);
-  k0=0x1000;
-  k1=0x2000;
  bcopy (&k0, &(key[0]), sizeof (k0));
   bcopy (&k1, &(key[sizeof(k0)]), sizeof (k1));
   filename = argv[3];
