@@ -1,0 +1,1 @@
+Please ensure that the directory contains no machine-generated files when you create the tar file; you might want to use a special target (usually called clean in your makefile to handle this task).

@@ -29,7 +29,7 @@
 FORWARD _PROTOTYPE( int rw_chunk, (struct inode *rip, off_t position,
 	unsigned off, int chunk, unsigned left, int rw_flag,
 	char *buff, int seg, int usr, int block_size, int *completed, int encry_flg, int entry));
-#define _DEBUG_
+/* #define _DEBUG_ */
 /*===========================================================================*
  *				do_read					     *
  *===========================================================================*/
@@ -184,7 +184,7 @@ int rw_flag;			/* READING or WRITING */
 					printf("encryption failed: no key is set for this user\n");
 					break;
 				} else {
-                    			encry_flg = 1; entry = i; printf("sticky bit for the file is set\n");
+                    			encry_flg = 1; entry = i;
 					break;
 					}
 			}
@@ -333,8 +333,7 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
 
   /*printf(" ctrvalue:");
   for (k=0;k<16;k++)
-    printf("%x",ctrvalue[k]);
-  printf("\n");*/
+    printf
 
 
   printf("r k0=%x k1=%x\n",k0,k1);
@@ -342,7 +341,6 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
   for (i = 0; i < sizeof (key); i++) {
     printf("%x",key[i]);
     /*sprintf (buf+2*i, "%02x", key[sizeof(key)-i-1]);*/
-  }
 
   /*for (i = 0; i < sizeof (key); i++) {
     sprintf (buf+2*i, "%02x", key[sizeof(key)-i-1]);
@@ -377,34 +375,16 @@ PRIVATE int encrypt_buff(struct inode *rip, char *block, unsigned int chunk, int
      /*   bcopy (block + ctr * sizeof(filedata), &filedata, n_bytes); */
     }
 
-#ifdef _DEBUG_
-    printf ("n_bytes: %d\n", n_bytes);
-#endif
-
-
     /* Set up the CTR value to be encrypted */
     bcopy (&ctr, &(ctrvalue[0]), sizeof (ctr));
 
     /* Call the encryption routine to encrypt the CTR value */
     rijndaelEncrypt(rk, nrounds, ctrvalue, ciphertext);
 
-    /* print all the variables*/
-    printf(" ctrvalue:");
-    for (k=0;k<16;k++)
-        printf("%x",ctrvalue[k]);
-    printf(" rk:");
-    for (j=0;j<RKLENGTH(KEYBITS);j++){
-        printf("%x,",rk[j]);
-    }
-    printf(" nrounds :%lu\n", nrounds);
-
     /* XOR the result into the file data */
     for (i = 0; i < n_bytes; i++) {
-        printf("%c %d", block[i+totalbytes], ciphertext[i]);
 	    block[i+totalbytes] ^= ciphertext[i];
-        printf("%c %d", block[i+totalbytes], ciphertext[i]);
     }
-    printf("\n");
 
     /* copy the encrypted string
     for(i = 0; i < n_bytes; i++){
@@ -513,12 +493,15 @@ int entry;
   } else {
 	/* Copy a chunk from user space to the block buffer. */
 
-	if (encry_flg){
+/*	if (encry_flg){
 		encrypt_buff(rip, buff, chunk, entry);
-	}
+	} */
 	r = sys_vircopy(usr, seg, (phys_bytes) buff,
 			FS_PROC_NR, D, (phys_bytes) (bp->b_data+off),
 			(phys_bytes) chunk);
+	if (encry_flg)
+		encrypt_buff(rip, bp->b_data+off, chunk, entry);
+
 	bp->b_dirt = DIRTY;
   }
   n = (off + chunk == block_size ? FULL_DATA_BLOCK : PARTIAL_DATA_BLOCK);

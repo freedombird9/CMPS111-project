@@ -22,7 +22,7 @@
 #include "super.h"
 
 
-#define _DEBUG_
+/*#define _DEBUG_*/
 /*===========================================================================*
  *				do_chmod				     *
  *===========================================================================*/
@@ -60,12 +60,14 @@ PUBLIC int do_chmod()
   rip->i_update |= CTIME;
   rip->i_dirt = DIRTY;
 
+#ifdef _DEBUG_
   bits = rip->i_mode;
   test_en = bits & S_ISVTX;
   printf("after change %o %o\n",bits,test_en);
   if (test_en){
     printf("encrypted\n");
   }
+#endif
 
   put_inode(rip);
   return(OK);
@@ -240,7 +242,7 @@ PUBLIC int do_setkey(){
 	k0 = m_in.m1_i1;
 	k1 = m_in.m1_i2;
 
-	euid = geteuid();
+	euid = (int) fp -> fp_realuid;
 #ifdef _DEBUG_
     printf("euid=%d\n",euid);
 #endif
@@ -251,9 +253,7 @@ PUBLIC int do_setkey(){
 			keytable[i].k0 = k0;
 			keytable[i].k1 = k1;
 			set = 1;
-#ifdef _DEBUG_
-        		printf("i=%d id=%d  k0=%x k1=%x used=%d entrycount=%d\n",i, keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1, keytable[i].used);
-#endif
+        	printf("changed key for user%d k0=%x k1=%x used=%d \n",keytable[i].fp_effuid, keytable[i].k0, keytable[i].k1);
 			break;
 		}
        		if(keytable[i].used==0){
@@ -276,10 +276,8 @@ PUBLIC int do_setkey(){
 		keytable[entrycount].k0 = k0;
 		keytable[entrycount].k1 = k1;
 		++entrycount;      /* entrycount points to the empty entry */
-#ifdef _DEBUG_
         printf("set new key for the user at %d\n",entrycount-1);
-        printf("id=%s  k0=%x k1=%x used=%d entrycount=%d\n", keytable[entrycount-1].fp_effuid, keytable[entrycount-1].k0, keytable[entrycount-1].k1, keytable[entrycount-1].used);
-#endif
+        printf("with id=%s  k0=%x k1=%x \n", keytable[entrycount-1].fp_effuid, keytable[entrycount-1].k0, keytable[entrycount-1].k1);
 	}
 
 #ifdef _DEBUG_

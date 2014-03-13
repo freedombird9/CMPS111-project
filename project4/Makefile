@@ -1,35 +1,67 @@
-# Makefile for File System (FS)
-SERVER = fs
+#
+# Makefile for project4
+#
 
-# directories
-u = /usr
-i = $u/include
-s = $i/sys
-h = $i/minix
+#MAKEIMG = make image
+#MAKEIST = make install
+#MMAKE = make makefile
+#MAKELIB = make libraries
 
-# programs, flags, etc.
-CC =	exec cc
-CFLAGS = -I$i $(EXTRA_OPTS)
-LDFLAGS = -i
-LIBS = -lsys -lsysutil -ltimers
+FSDIR = /usr/src/servers/fs/
+LIBDIR = /usr/src/lib/posix/
+HEADERDIRF = /usr/src/include/minix/
+HEADERDIRS = /usr/include/minix/
 
-OBJ =	main.o open.o read.o write.o pipe.o dmap.o \
-	device.o path.o mount.o link.o super.o inode.o \
-	cache.o cache2.o filedes.o stadir.o protect.o time.o \
-	lock.o misc.o utility.o select.o timers.o table.o rijndael.o
 
-# build local binary 
-install all build:	$(SERVER)
-$(SERVER):	$(OBJ)
-	$(CC) -o $@ $(LDFLAGS) $(OBJ) $(LIBS)
-	install -S 512w $@
+# copy the target files to its dir
 
-# clean up local files
-clean:
-	rm -f $(SERVER) *.o *.bak 
 
-depend: 
-	/usr/bin/mkdep "$(CC) -E $(CPPFLAGS)" *.c > .depend
+copy:
+	cp protect.c $(FSDIR)
+	cp glo.h $(FSDIR)
+	cp table.c $(FSDIR)
+	cp proto.h $(FSDIR)
+	cp const.h $(HEADERDIRF)
+	cp callnr.h $(HEADERDIRF)
+	cp const2.h $(HEADERDIRS)const.h
+	cp callnr2.h $(HEADERDIRS)callnr.h
+	cp _set_key.c $(LIBDIR)
+	cp Makefile.in $(LIBDIR)
+	cp read.c $(FSDIR)
+	cp rijndael.c $(FSDIR)
+	cp rijndael.h $(FSDIR)
+	cp Makefilefs $(FSDIR)Makefile
 
-# Include generated dependencies.
-include .depend
+
+#make
+all:
+	cd /usr/src/servers/ && make image
+	cd /usr/src/servers/ && make install
+	cd $(LIBDIR) && make Makefile
+	cd /usr/src/ && make libraries
+	cd /usr/src/tools && make hdboot
+	cd /usr/src/tools && make install
+
+
+delete:
+	rm $(FSDIR)protect.c
+	rm $(FSDIR)glo.h
+	rm $(FSDIR)table.c
+	rm $(FSDIR)proto.h
+	rm $(HEADERDIRF)const.h
+	rm $(HEADERDIRF)callnr.h
+	rm $(HEADERDIRS)const.h
+	rm $(HEADERDIRS)callnr.h
+	rm $(LIBDIR)_set_key.c
+	rm $(LIBDIR)Makefile.in
+	rm $(FSDIR)read.c 
+	rm $(FSDIR)rijndael.c
+	rm $(FSDIR)rijndael.h
+	rm $(FSDIR)Makefile
+
+key:
+	cc setkey.c -o setkey
+
+
+
+

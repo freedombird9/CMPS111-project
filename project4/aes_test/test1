@@ -1,0 +1,1 @@
+This call sets the key for the current user. The two most significant integers (half the AES key) are zero, with k0 and k1 occupying the other positions. Obviously, it doesn't matter which places are filled in the key, as long as the files aren't being shared with other MINIX systems and your setkey() system call and protectfile program (see below)
